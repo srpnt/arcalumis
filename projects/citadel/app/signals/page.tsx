@@ -3,7 +3,6 @@
 import { useState } from "react";
 import useSWR from "swr";
 import SignalCard from "@/components/SignalCard";
-import MetricCard from "@/components/MetricCard";
 import { Signal, SignalUrgency } from "@/lib/types";
 
 async function fetchSignals(): Promise<Signal[]> {
@@ -13,116 +12,162 @@ async function fetchSignals(): Promise<Signal[]> {
   return json.signals || [];
 }
 
-const URGENCY_FILTERS: { key: SignalUrgency; label: string; emoji: string }[] = [
-  { key: "critical", label: "Critical", emoji: "🔴" },
-  { key: "notable", label: "Notable", emoji: "🟡" },
-  { key: "info", label: "Info", emoji: "🟢" },
+type FilterTab = "all" | "critical" | "notable" | "info";
+
+const FILTER_TABS: { key: FilterTab; label: string; icon: string }[] = [
+  { key: "all", label: "All Signals", icon: "📡" },
+  { key: "critical", label: "Critical", icon: "🔴" },
+  { key: "notable", label: "Notable", icon: "🟡" },
+  { key: "info", label: "Informational", icon: "🟢" },
 ];
 
 export default function SignalsPage() {
-  const [activeFilters, setActiveFilters] = useState<Set<SignalUrgency>>(
-    new Set(["critical", "notable", "info"])
-  );
+  const [activeTab, setActiveTab] = useState<FilterTab>("all");
 
-  const { data: signals, error, isLoading } = useSWR(
-    "signals",
-    fetchSignals,
-    { revalidateOnFocus: false, refreshInterval: 600_000 }
-  );
+  const {
+    data: signals,
+    error,
+    isLoading,
+  } = useSWR("signals", fetchSignals, {
+    revalidateOnFocus: false,
+    refreshInterval: 600_000,
+  });
 
-  const toggleFilter = (urgency: SignalUrgency) => {
-    setActiveFilters((prev) => {
-      const next = new Set(prev);
-      if (next.has(urgency)) {
-        next.delete(urgency);
-      } else {
-        next.add(urgency);
-      }
-      return next;
-    });
-  };
+  const allSignals = signals || [];
+  const criticalCount = allSignals.filter((s) => s.urgency === "critical").length;
+  const notableCount = allSignals.filter((s) => s.urgency === "notable").length;
+  const infoCount = allSignals.filter((s) => s.urgency === "info").length;
 
-  const filtered = (signals || []).filter((s) => activeFilters.has(s.urgency));
-
-  const criticalCount = (signals || []).filter(
-    (s) => s.urgency === "critical"
-  ).length;
-  const notableCount = (signals || []).filter(
-    (s) => s.urgency === "notable"
-  ).length;
-  const infoCount = (signals || []).filter((s) => s.urgency === "info").length;
+  const filtered =
+    activeTab === "all"
+      ? allSignals
+      : allSignals.filter((s) => s.urgency === activeTab);
 
   return (
     <div className="pt-8 md:pt-0">
+      {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-100">🚨 Signals & Alerts</h1>
         <p className="text-sm text-gray-500 mt-1">
-          Research findings and risk alerts from ecosystem scans
+          Intelligence feed — research findings and risk alerts from ecosystem scans
         </p>
       </div>
 
-      {/* Metrics */}
+      {/* Metrics Bar */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <MetricCard
-          label="Total Signals"
-          value={String((signals || []).length)}
-          icon="📡"
-        />
-        <MetricCard
-          label="🔴 Critical"
-          value={String(criticalCount)}
-          icon="🔴"
-        />
-        <MetricCard
-          label="🟡 Notable"
-          value={String(notableCount)}
-          icon="🟡"
-        />
-        <MetricCard label="🟢 Info" value={String(infoCount)} icon="🟢" />
+        {/* Total */}
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                Total Signals
+              </p>
+              <p className="mt-2 text-2xl font-bold text-gray-100">
+                {allSignals.length}
+              </p>
+            </div>
+            <span className="text-2xl opacity-60">📡</span>
+          </div>
+        </div>
+        {/* Critical */}
+        <div className="bg-gray-900 border border-red-500/15 rounded-xl p-5">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-xs font-medium text-red-400/70 uppercase tracking-wide">
+                Critical
+              </p>
+              <p className="mt-2 text-2xl font-bold text-red-400">
+                {criticalCount}
+              </p>
+            </div>
+            <span className="text-2xl opacity-60">🔴</span>
+          </div>
+        </div>
+        {/* Notable */}
+        <div className="bg-gray-900 border border-amber-500/15 rounded-xl p-5">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-xs font-medium text-amber-400/70 uppercase tracking-wide">
+                Notable
+              </p>
+              <p className="mt-2 text-2xl font-bold text-amber-400">
+                {notableCount}
+              </p>
+            </div>
+            <span className="text-2xl opacity-60">🟡</span>
+          </div>
+        </div>
+        {/* Informational */}
+        <div className="bg-gray-900 border border-emerald-500/15 rounded-xl p-5">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-xs font-medium text-emerald-400/70 uppercase tracking-wide">
+                Informational
+              </p>
+              <p className="mt-2 text-2xl font-bold text-emerald-400">
+                {infoCount}
+              </p>
+            </div>
+            <span className="text-2xl opacity-60">🟢</span>
+          </div>
+        </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex items-center gap-2 mb-6">
-        <span className="text-xs text-gray-500 mr-2">Filter:</span>
-        {URGENCY_FILTERS.map((f) => (
+      {/* Filter Tabs — matching Morpho page style */}
+      <div className="flex items-center gap-1 mb-6 bg-gray-900 rounded-lg p-1 w-fit">
+        {FILTER_TABS.map((tab) => (
           <button
-            key={f.key}
-            onClick={() => toggleFilter(f.key)}
-            className={`px-3 py-1.5 text-xs rounded-full border transition-colors ${
-              activeFilters.has(f.key)
-                ? f.key === "critical"
-                  ? "bg-red-500/10 border-red-500/30 text-red-400"
-                  : f.key === "notable"
-                  ? "bg-amber-500/10 border-amber-500/30 text-amber-400"
-                  : "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
-                : "bg-gray-800 border-gray-700 text-gray-500"
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`px-4 py-2 text-sm rounded-md transition-colors ${
+              activeTab === tab.key
+                ? "bg-gray-700 text-gray-100 font-medium"
+                : "text-gray-500 hover:text-gray-300"
             }`}
           >
-            {f.emoji} {f.label}
+            {tab.icon}{" "}
+            {tab.label}
+            {tab.key !== "all" && (
+              <span className="ml-1.5 text-xs opacity-60">
+                ({tab.key === "critical"
+                  ? criticalCount
+                  : tab.key === "notable"
+                  ? notableCount
+                  : infoCount})
+              </span>
+            )}
           </button>
         ))}
       </div>
 
+      {/* Error State */}
       {error && (
         <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-6 text-red-400 text-sm">
           ❌ {error.message}
         </div>
       )}
 
+      {/* Loading State */}
       {isLoading && (
         <div className="text-center py-12 text-gray-500">
-          Loading signals...
+          <div className="inline-block animate-pulse">Loading signals...</div>
+        </div>
+      )}
+
+      {/* Empty State */}
+      {filtered.length === 0 && !isLoading && !error && (
+        <div className="text-center py-16 text-gray-600">
+          <p className="text-4xl mb-4">📡</p>
+          <p className="text-sm">
+            {activeTab === "all"
+              ? "No signals detected yet. Check back after the next research scan."
+              : `No ${activeTab} signals. Adjust filters to see more.`}
+          </p>
         </div>
       )}
 
       {/* Signal Cards */}
-      {filtered.length === 0 && !isLoading && (
-        <div className="text-center py-12 text-gray-500">
-          No signals match the current filter. Try adjusting the filters above.
-        </div>
-      )}
-
-      <div className="space-y-3">
+      <div className="flex flex-col gap-4">
         {filtered.map((signal) => (
           <SignalCard key={signal.id} signal={signal} />
         ))}
