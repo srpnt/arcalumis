@@ -796,10 +796,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="text-center text-[10px] text-gray-700 mt-6">
-        Citadel v0.2 · Powered by Arcalumis 🦞
-      </div>
+
     </div>
   );
 }
