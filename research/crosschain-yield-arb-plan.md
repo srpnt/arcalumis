@@ -105,6 +105,31 @@ Same-asset lending rates differ materially across chains (ETH mainnet yields 1.5
 - **Phase 2c** (after dappnode): Execution script — 2-3 sessions
 - **Phase 2d** (later): Multi-protocol expansion — ongoing
 
+## Execution Architecture
+
+### Single-chain (atomic)
+- Borrow + supply on same chain can be done in one transaction via a smart contract
+- Flash loan → borrow on Protocol A → supply on Protocol B → all atomic
+- No bridge risk, no timing risk, instant
+- Limited opportunity set (only same-chain rate differentials)
+
+### Cross-chain (composable, async)
+- Cannot be atomic — bridge introduces time between legs
+- Must be broken into composable steps:
+  1. **Leg 1:** Borrow/withdraw on source chain → confirm
+  2. **Bridge:** Send assets cross-chain → wait for confirmation
+  3. **Leg 2:** Supply/deposit on destination chain → confirm
+- Each step is independent and must handle failure gracefully
+- State machine pattern: track position state (initiated → bridging → deployed → exiting)
+- Rate can change between legs — need to check destination rate before executing Leg 2
+- Abort/unwind capability at each step
+
+### Implications for our build:
+- Single-chain: Trinity deploys a Solidity contract (router)
+- Cross-chain: Trinity builds an off-chain orchestrator (Python/TS) that manages the async flow
+- Both need: position tracking, P&L calculation, exit triggers
+- Cross-chain needs: bridge status monitoring, rate re-verification, timeout handling
+
 ## Risk Framework
 | Risk | Mitigation |
 |------|-----------|
