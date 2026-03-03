@@ -543,6 +543,12 @@ export default function Home() {
               <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />
                 Utilization Alerts
+                <span className="relative group">
+                  <span className="cursor-help text-gray-600 hover:text-gray-400 transition-colors">ⓘ</span>
+                  <span className="absolute left-6 top-0 z-50 hidden group-hover:block w-64 p-2 text-[11px] text-gray-300 bg-gray-800 border border-gray-700 rounded-lg shadow-xl leading-relaxed">
+                    Vaults with utilization &gt;85% are under withdrawal pressure. At &gt;95%, the IRM pushes borrow rates to 190%+ APR (emergency mode). Borrowers can&apos;t withdraw, depositors face illiquidity.
+                  </span>
+                </span>
               </h2>
               <span className="text-[10px] text-gray-600 font-mono">
                 {highUtilVaults.length > 0
@@ -674,6 +680,12 @@ export default function Home() {
             <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />
               Collateral Risk
+              <span className="relative group">
+                <span className="cursor-help text-gray-600 hover:text-gray-400 transition-colors">ⓘ</span>
+                <span className="absolute left-0 top-6 z-50 hidden group-hover:block w-64 p-2 text-[11px] text-gray-300 bg-gray-800 border border-gray-700 rounded-lg shadow-xl leading-relaxed">
+                  Tier 4 &quot;Exotic&quot; collateral includes unproven stablecoins, wrapped derivatives, and thin-liquidity tokens. When these depeg, liquidation is often impossible — see MEV Capital sdeUSD incident (99.8% loss, $1.3M bad debt).
+                </span>
+              </span>
             </h2>
             <div className="mb-2">
               <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-0.5">
@@ -701,6 +713,12 @@ export default function Home() {
             <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
               Concentration Risk
+              <span className="relative group">
+                <span className="cursor-help text-gray-600 hover:text-gray-400 transition-colors">ⓘ</span>
+                <span className="absolute left-0 top-6 z-50 hidden group-hover:block w-64 p-2 text-[11px] text-gray-300 bg-gray-800 border border-gray-700 rounded-lg shadow-xl leading-relaxed">
+                  Vaults where a single depositor holds &gt;50% of TVL face withdrawal shock risk. If that whale exits, utilization spikes, remaining depositors may be unable to withdraw.
+                </span>
+              </span>
             </h2>
             <div className="space-y-2">
               <div>
