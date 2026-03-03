@@ -10,7 +10,7 @@ const NAV_ITEMS = [
   { href: "/differentials", label: "Differentials", icon: "🔀" },
   { href: "/signals", label: "Signals", icon: "🚨" },
   { href: "/exposure", label: "Exposure", icon: "🛡" },
-  { href: "/arkham", label: "Arkham", icon: "🔍" },
+  { href: "/intel", label: "Intel", icon: "🔍" },
 ];
 
 export default function Sidebar() {

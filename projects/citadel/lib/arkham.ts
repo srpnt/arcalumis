@@ -4,7 +4,7 @@
 
 import { ArkhamEntity, ArkhamBalance, ArkhamTransfer } from "./types";
 
-const PROXY_BASE = "/api/arkham";
+const PROXY_BASE = "/api/intel";
 
 async function arkhamGet(path: string, params?: Record<string, string>) {
   let url = `${PROXY_BASE}${path}`;

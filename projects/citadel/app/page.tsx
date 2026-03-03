@@ -26,9 +26,9 @@ const NAV_CARDS = [
     desc: "Research findings, risk alerts, and ecosystem intelligence",
   },
   {
-    href: "/arkham",
+    href: "/intel",
     icon: "🔍",
-    title: "Arkham Intel",
+    title: "Intel Hub",
     desc: "On-chain entity lookup, wallet analysis, and transfer tracking",
   },
 ];
