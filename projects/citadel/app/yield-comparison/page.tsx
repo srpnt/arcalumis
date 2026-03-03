@@ -290,7 +290,7 @@ function ROICalculator({
   );
 }
 
-export default function DifferentialsPage() {
+export default function Yield ComparisonPage() {
   const [minTvl, setMinTvl] = useState(1_000_000);
   const [roiCapital, setRoiCapital] = useState(100000);
   const [roiAsset, setRoiAsset] = useState("");
@@ -336,7 +336,7 @@ export default function DifferentialsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-100">
-            🔀 Cross-Chain Differentials
+            🔀 Cross-Chain Yield Comparison
           </h1>
           <p className="text-sm text-gray-500 mt-1">
             Ethereum vs Base rate comparison on Morpho
