@@ -9,6 +9,7 @@ interface Column<T> {
   sortable?: boolean;
   align?: "left" | "right" | "center";
   width?: string;
+  minWidth?: string;
 }
 
 interface DataTableProps<T> {
@@ -65,18 +66,21 @@ export default function DataTable<T extends Record<string, unknown>>({
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="w-full text-sm table-fixed">
         <thead>
           <tr className="border-b border-gray-800">
             {columns.map((col) => (
               <th
                 key={col.key}
                 className={`
-                  px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider
+                  px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap overflow-hidden text-ellipsis
                   ${col.align === "right" ? "text-right" : col.align === "center" ? "text-center" : "text-left"}
                   ${col.sortable !== false ? "cursor-pointer hover:text-gray-300 select-none" : ""}
                 `}
-                style={col.width ? { width: col.width } : undefined}
+                style={{
+                  width: col.width || undefined,
+                  minWidth: col.minWidth || undefined,
+                }}
                 onClick={() => col.sortable !== false && handleSort(col.key)}
               >
                 <span className="inline-flex items-center gap-1">
@@ -93,7 +97,7 @@ export default function DataTable<T extends Record<string, unknown>>({
         </thead>
         <tbody>
           {sorted.map((row, i) => (
-            <React.Fragment key={row.uniqueId || row.address || row.id || i}>
+            <React.Fragment key={String(row.uniqueId ?? row.address ?? row.id ?? i)}>
               <tr
                 className={`
                   border-b border-gray-800/50 transition-colors
@@ -111,7 +115,7 @@ export default function DataTable<T extends Record<string, unknown>>({
                   <td
                     key={col.key}
                     className={`
-                      px-4 py-3 text-gray-300
+                      px-4 py-3 text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis
                       ${col.align === "right" ? "text-right" : col.align === "center" ? "text-center" : "text-left"}
                     `}
                   >

@@ -2,6 +2,7 @@ import { fetchVaults, fetchMarkets } from "@/lib/morpho";
 import { loadAllSignals } from "@/lib/signals";
 import { formatUsd, formatPct } from "@/lib/format";
 import Link from "next/link";
+import ChainDonut from "@/components/ChainDonut";
 
 export const revalidate = 300; // 5 minutes
 
@@ -34,6 +35,8 @@ const NAV_CARDS = [
 
 export default async function Home() {
   let totalTvl = 0;
+  let ethTvl = 0;
+  let baseTvl = 0;
   let bestYield = 0;
   let bestVaultName = "";
   let bestVaultAddress = "";
@@ -48,6 +51,12 @@ export default async function Home() {
     ]);
 
     totalTvl = vaults.reduce((sum, v) => sum + v.totalAssetsUsd, 0);
+    ethTvl = vaults
+      .filter((v) => v.chainId === 1)
+      .reduce((sum, v) => sum + v.totalAssetsUsd, 0);
+    baseTvl = vaults
+      .filter((v) => v.chainId === 8453)
+      .reduce((sum, v) => sum + v.totalAssetsUsd, 0);
     marketsCount = markets.length;
 
     for (const v of vaults) {
@@ -86,7 +95,7 @@ export default async function Home() {
       </div>
 
       {/* Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <Link href="/morpho">
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 hover:border-emerald-500/30 hover:bg-gray-800/50 transition-all cursor-pointer">
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
@@ -136,6 +145,17 @@ export default async function Home() {
             <p className="mt-1 text-xs text-gray-500">Ethereum + Base</p>
           </div>
         </Link>
+      </div>
+
+      {/* Mini Chart Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12">
+        <ChainDonut ethTvl={ethTvl} baseTvl={baseTvl} />
+        <div className="sm:col-span-2 bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-gray-500 text-sm">📈 Sparklines & trends coming soon</p>
+            <p className="text-gray-600 text-xs mt-1">Time series data needed for historical charts</p>
+          </div>
+        </div>
       </div>
 
       {/* Navigation Cards */}

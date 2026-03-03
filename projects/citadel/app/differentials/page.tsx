@@ -10,6 +10,9 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  CartesianGrid,
+  Cell,
+  ReferenceLine,
 } from "recharts";
 import MetricCard from "@/components/MetricCard";
 import { MorphoVault, ChainRate } from "@/lib/types";
@@ -101,32 +104,18 @@ function computeDiffs(vaults: MorphoVault[], minTvl: number): ChainRate[] {
     (v) => v.chainId === 8453 && v.totalAssetsUsd >= minTvl
   );
 
-  const ethByAsset = new Map<
-    string,
-    { apys: number[]; tvl: number; count: number }
-  >();
+  const ethByAsset = new Map<string, { apys: number[]; tvl: number; count: number }>();
   for (const v of ethVaults) {
-    const existing = ethByAsset.get(v.underlyingAsset) || {
-      apys: [],
-      tvl: 0,
-      count: 0,
-    };
+    const existing = ethByAsset.get(v.underlyingAsset) || { apys: [], tvl: 0, count: 0 };
     existing.apys.push(v.netApy);
     existing.tvl += v.totalAssetsUsd;
     existing.count++;
     ethByAsset.set(v.underlyingAsset, existing);
   }
 
-  const baseByAsset = new Map<
-    string,
-    { apys: number[]; tvl: number; count: number }
-  >();
+  const baseByAsset = new Map<string, { apys: number[]; tvl: number; count: number }>();
   for (const v of baseVaults) {
-    const existing = baseByAsset.get(v.underlyingAsset) || {
-      apys: [],
-      tvl: 0,
-      count: 0,
-    };
+    const existing = baseByAsset.get(v.underlyingAsset) || { apys: [], tvl: 0, count: 0 };
     existing.apys.push(v.netApy);
     existing.tvl += v.totalAssetsUsd;
     existing.count++;
@@ -142,8 +131,7 @@ function computeDiffs(vaults: MorphoVault[], minTvl: number): ChainRate[] {
     const ethBest = Math.max(...ethData.apys);
     const baseBest = Math.max(...baseData.apys);
     const ethAvg = ethData.apys.reduce((s, a) => s + a, 0) / ethData.apys.length;
-    const baseAvg =
-      baseData.apys.reduce((s, a) => s + a, 0) / baseData.apys.length;
+    const baseAvg = baseData.apys.reduce((s, a) => s + a, 0) / baseData.apys.length;
     const spread = ethBest - baseBest;
 
     diffs.push({
@@ -164,6 +152,28 @@ function computeDiffs(vaults: MorphoVault[], minTvl: number): ChainRate[] {
   return diffs.sort((a, b) => b.absSpread - a.absSpread);
 }
 
+// --- Butterfly chart tooltip ---
+
+interface ButterflyTooltipProps {
+  active?: boolean;
+  payload?: Array<{ name: string; value: number; color: string }>;
+  label?: string;
+}
+
+function ButterflyTooltip({ active, payload, label }: ButterflyTooltipProps) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm">
+      <p className="text-gray-200 font-medium mb-1">{label}</p>
+      {payload.map((p, i) => (
+        <p key={i} style={{ color: p.color }} className="text-xs">
+          {p.name}: {Math.abs(p.value).toFixed(2)}%
+        </p>
+      ))}
+    </div>
+  );
+}
+
 export default function DifferentialsPage() {
   const [minTvl, setMinTvl] = useState(1_000_000);
 
@@ -181,11 +191,27 @@ export default function DifferentialsPage() {
   const opportunities = diffs.filter((d) => d.absSpread > 0.01);
   const maxSpread = diffs.length ? diffs[0].absSpread : 0;
 
-  const chartData = [...diffs].reverse().map((d) => ({
-    asset: d.asset,
-    Ethereum: +(d.ethBestApy * 100).toFixed(2),
-    Base: +(d.baseBestApy * 100).toFixed(2),
-  }));
+  // --- Butterfly chart data ---
+  const butterflyData = useMemo(() => {
+    return [...diffs].map((d) => ({
+      asset: d.asset,
+      ethRate: -(d.ethBestApy * 100),      // negative = extends left
+      baseRate: +(d.baseBestApy * 100),     // positive = extends right
+      ethDisplay: +(d.ethBestApy * 100).toFixed(2),
+      baseDisplay: +(d.baseBestApy * 100).toFixed(2),
+      spread: d.absSpread,
+      highlight: d.absSpread > 0.02,
+    }));
+  }, [diffs]);
+
+  // Max domain for symmetric axis
+  const maxRate = useMemo(() => {
+    let m = 0;
+    for (const d of butterflyData) {
+      m = Math.max(m, Math.abs(d.ethRate), d.baseRate);
+    }
+    return Math.ceil(m + 1);
+  }, [butterflyData]);
 
   return (
     <div className="pt-8 md:pt-0">
@@ -216,21 +242,9 @@ export default function DifferentialsPage() {
 
       {/* Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        <MetricCard
-          label="Cross-Chain Pairs"
-          value={String(diffs.length)}
-          icon="🔗"
-        />
-        <MetricCard
-          label="Arb Opportunities (>1%)"
-          value={String(opportunities.length)}
-          icon="🎯"
-        />
-        <MetricCard
-          label="Max Spread"
-          value={formatPct(maxSpread)}
-          icon="📈"
-        />
+        <MetricCard label="Cross-Chain Pairs" value={String(diffs.length)} icon="🔗" />
+        <MetricCard label="Arb Opportunities (>1%)" value={String(opportunities.length)} icon="🎯" />
+        <MetricCard label="Max Spread" value={formatPct(maxSpread)} icon="📈" />
       </div>
 
       {error && (
@@ -267,8 +281,7 @@ export default function DifferentialsPage() {
                         {direction} • Higher on {higher}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">
-                        ETH: {formatPct(d.ethBestApy)} • Base:{" "}
-                        {formatPct(d.baseBestApy)}
+                        ETH: {formatPct(d.ethBestApy)} • Base: {formatPct(d.baseBestApy)}
                       </p>
                     </div>
                     <div className="text-right">
@@ -285,45 +298,70 @@ export default function DifferentialsPage() {
         </div>
       )}
 
-      {/* Chart */}
-      {chartData.length > 0 && (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-8">
-          <h2 className="text-sm font-semibold text-gray-400 mb-4">
-            📊 Rate Comparison by Asset (Best APY %)
+      {/* Butterfly Chart */}
+      {butterflyData.length > 0 && (
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 mb-8">
+          <h2 className="text-sm font-semibold text-gray-400 mb-1">
+            🦋 Rate Butterfly — Ethereum (left) vs Base (right)
           </h2>
-          <ResponsiveContainer width="100%" height={Math.max(300, chartData.length * 50)}>
+          <p className="text-xs text-gray-600 mb-4">
+            Diverging bars show best APY per chain. Rows with &gt;2% spread highlighted.
+          </p>
+          <ResponsiveContainer width="100%" height={Math.max(300, butterflyData.length * 40)}>
             <BarChart
-              data={chartData}
+              data={butterflyData}
               layout="vertical"
-              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+              margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
+              stackOffset="sign"
             >
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" horizontal={false} />
               <XAxis
                 type="number"
                 stroke="#4b5563"
-                tick={{ fill: "#9ca3af", fontSize: 12 }}
-                tickFormatter={(v) => `${v}%`}
+                tick={{ fill: "#9ca3af", fontSize: 11 }}
+                domain={[-maxRate, maxRate]}
+                tickFormatter={(v) => `${Math.abs(v).toFixed(1)}%`}
               />
               <YAxis
                 type="category"
                 dataKey="asset"
                 stroke="#4b5563"
-                tick={{ fill: "#9ca3af", fontSize: 12 }}
+                tick={{ fill: "#d1d5db", fontSize: 12, fontWeight: 500 }}
                 width={80}
               />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "#1f2937",
-                  border: "1px solid #374151",
-                  borderRadius: "8px",
-                  color: "#e5e7eb",
-                }}
-                formatter={(value) => [`${value}%`]}
-              />
-              <Legend />
-              <Bar dataKey="Ethereum" fill="#6366f1" radius={[0, 4, 4, 0]} />
-              <Bar dataKey="Base" fill="#3b82f6" radius={[0, 4, 4, 0]} />
+              <Tooltip content={<ButterflyTooltip />} />
+              <ReferenceLine x={0} stroke="#6b7280" strokeWidth={2} />
+              <Bar dataKey="ethRate" name="Ethereum" stackId="stack" radius={[4, 0, 0, 4]}>
+                {butterflyData.map((entry, i) => (
+                  <Cell
+                    key={i}
+                    fill={entry.highlight ? "#34d399" : "#10b981"}
+                    fillOpacity={entry.highlight ? 1 : 0.7}
+                  />
+                ))}
+              </Bar>
+              <Bar dataKey="baseRate" name="Base" stackId="stack" radius={[0, 4, 4, 0]}>
+                {butterflyData.map((entry, i) => (
+                  <Cell
+                    key={i}
+                    fill={entry.highlight ? "#60a5fa" : "#3b82f6"}
+                    fillOpacity={entry.highlight ? 1 : 0.7}
+                  />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
+          <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
+            <div className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-sm bg-emerald-500" />
+              <span>← Ethereum</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-sm bg-blue-500" />
+              <span>Base →</span>
+            </div>
+            <span className="text-gray-600">Brighter = spread &gt;2%</span>
+          </div>
         </div>
       )}
 
@@ -336,25 +374,25 @@ export default function DifferentialsPage() {
             </h2>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm table-fixed">
               <thead>
                 <tr className="border-b border-gray-800">
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase w-[16%]">
                     Asset
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase w-[14%]">
                     ETH Best APY
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase w-[14%]">
                     Base Best APY
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase w-[14%]">
                     Spread
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase w-[16%]">
                     ETH TVL
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase w-[16%]">
                     Base TVL
                   </th>
                 </tr>
@@ -363,19 +401,21 @@ export default function DifferentialsPage() {
                 {diffs.map((d) => (
                   <tr
                     key={d.asset}
-                    className="border-b border-gray-800/50 hover:bg-gray-800/30"
+                    className={`border-b border-gray-800/50 hover:bg-gray-800/30 ${
+                      d.absSpread > 0.02 ? "bg-emerald-500/[0.03]" : ""
+                    }`}
                   >
                     <td className="px-4 py-3 font-medium text-gray-200">
                       {d.asset}
                     </td>
-                    <td className="px-4 py-3 text-right text-indigo-400">
+                    <td className="px-4 py-3 text-right text-emerald-400 font-mono">
                       {formatPct(d.ethBestApy)}
                     </td>
-                    <td className="px-4 py-3 text-right text-blue-400">
+                    <td className="px-4 py-3 text-right text-blue-400 font-mono">
                       {formatPct(d.baseBestApy)}
                     </td>
                     <td
-                      className={`px-4 py-3 text-right font-medium ${
+                      className={`px-4 py-3 text-right font-medium font-mono ${
                         d.absSpread > 0.01
                           ? "text-emerald-400"
                           : "text-gray-500"
@@ -384,10 +424,10 @@ export default function DifferentialsPage() {
                       {d.spread > 0 ? "+" : ""}
                       {formatPct(d.spread)}
                     </td>
-                    <td className="px-4 py-3 text-right text-gray-400">
+                    <td className="px-4 py-3 text-right text-gray-400 font-mono">
                       {formatUsd(d.ethTvl)}
                     </td>
-                    <td className="px-4 py-3 text-right text-gray-400">
+                    <td className="px-4 py-3 text-right text-gray-400 font-mono">
                       {formatUsd(d.baseTvl)}
                     </td>
                   </tr>

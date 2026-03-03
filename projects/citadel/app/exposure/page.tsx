@@ -1,7 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import useSWR from "swr";
+import {
+  Treemap,
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 import MetricCard from "@/components/MetricCard";
 import ChainBadge from "@/components/ChainBadge";
 import DataTable from "@/components/DataTable";
@@ -61,19 +70,113 @@ async function fetchExposure(): Promise<ExposureData> {
 
 type TierFilter = "all" | 1 | 2 | 3 | 4;
 
-// --- Row background by tier ---
+// --- Tier colors ---
 
-function tierRowClass(tier: number): string {
-  if (tier === 4) return "bg-red-500/[0.03]";
-  if (tier === 3) return "bg-amber-500/[0.03]";
-  return "";
-}
+const TIER_COLORS: Record<number, string> = {
+  1: "#10b981", // emerald
+  2: "#3b82f6", // blue
+  3: "#f59e0b", // amber
+  4: "#ef4444", // red
+};
+
+const TIER_NAMES: Record<number, string> = {
+  1: "Tier 1 — Blue Chip",
+  2: "Tier 2 — Established",
+  3: "Tier 3 — Emerging",
+  4: "Tier 4 — Exotic",
+};
 
 // --- Market URL builder ---
 
 function morphoMarketUrl(uniqueKey: string, chainId: number): string {
   const network = chainId === 8453 ? "base" : "mainnet";
   return `https://app.morpho.org/market?id=${uniqueKey}&network=${network}`;
+}
+
+// --- Custom Treemap content ---
+
+interface TreemapNodeProps {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  name: string;
+  exposure: string;
+  fill: string;
+}
+
+function TreemapContent(props: TreemapNodeProps) {
+  const { x, y, width, height, name, exposure, fill } = props;
+  if (width < 40 || height < 30) return null;
+
+  return (
+    <g>
+      <rect
+        x={x}
+        y={y}
+        width={width}
+        height={height}
+        fill={fill}
+        stroke="#1f2937"
+        strokeWidth={2}
+        rx={4}
+        style={{ opacity: 0.85 }}
+      />
+      {width > 60 && height > 40 && (
+        <>
+          <text
+            x={x + width / 2}
+            y={y + height / 2 - 6}
+            textAnchor="middle"
+            fill="#fff"
+            fontSize={width > 100 ? 13 : 10}
+            fontWeight="bold"
+          >
+            {name}
+          </text>
+          <text
+            x={x + width / 2}
+            y={y + height / 2 + 10}
+            textAnchor="middle"
+            fill="rgba(255,255,255,0.7)"
+            fontSize={width > 100 ? 11 : 9}
+          >
+            {exposure}
+          </text>
+        </>
+      )}
+    </g>
+  );
+}
+
+// --- Custom tooltip for charts ---
+
+interface ChartTooltipProps {
+  active?: boolean;
+  payload?: Array<{ payload: Record<string, unknown>; name: string; value: number }>;
+}
+
+function TreemapTooltip({ active, payload }: ChartTooltipProps) {
+  if (!active || !payload?.length) return null;
+  const d = payload[0].payload;
+  return (
+    <div className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm">
+      <p className="text-gray-200 font-medium">{String(d.name)}</p>
+      <p className="text-gray-400">{String(d.exposure)}</p>
+      <p className="text-gray-500 text-xs">{String(d.tierLabel)}</p>
+    </div>
+  );
+}
+
+function DonutTooltip({ active, payload }: ChartTooltipProps) {
+  if (!active || !payload?.length) return null;
+  const d = payload[0];
+  return (
+    <div className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm">
+      <p className="text-gray-200 font-medium">{d.name}</p>
+      <p className="text-gray-400">{formatUsd(d.value)}</p>
+    </div>
+  );
 }
 
 // --- Page Component ---
@@ -97,14 +200,47 @@ export default function ExposurePage() {
   // Build table-friendly rows
   const rows = filtered.map((a) => ({
     ...a,
-    // DataTable needs these as top-level for sorting
     uniqueId: a.symbol,
   }));
+
+  // --- Treemap data: top 25 assets by exposure ---
+  const treemapData = useMemo(() => {
+    const sorted = [...assets]
+      .sort((a, b) => b.totalExposureUsd - a.totalExposureUsd)
+      .slice(0, 25);
+    return sorted.map((a) => ({
+      name: a.symbol,
+      size: a.totalExposureUsd,
+      exposure: formatUsd(a.totalExposureUsd),
+      tier: a.tier,
+      tierLabel: a.tierLabel,
+      fill: TIER_COLORS[a.tier] || TIER_COLORS[4],
+    }));
+  }, [assets]);
+
+  // --- Donut data: tier breakdown ---
+  const donutData = useMemo(() => {
+    const tierSums: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0 };
+    for (const a of assets) {
+      tierSums[a.tier] = (tierSums[a.tier] || 0) + a.totalExposureUsd;
+    }
+    return [1, 2, 3, 4]
+      .filter((t) => tierSums[t] > 0)
+      .map((t) => ({
+        name: TIER_NAMES[t],
+        value: tierSums[t],
+        color: TIER_COLORS[t],
+      }));
+  }, [assets]);
+
+  const totalExposure = data?.totalExposureUsd || 0;
 
   const columns = [
     {
       key: "symbol",
       label: "Asset",
+      width: "18%",
+      minWidth: "140px",
       render: (row: Record<string, unknown>) => {
         const a = row as unknown as CollateralAsset;
         return (
@@ -122,6 +258,8 @@ export default function ExposurePage() {
     {
       key: "tier",
       label: "Risk Tier",
+      width: "16%",
+      minWidth: "130px",
       render: (row: Record<string, unknown>) => {
         const a = row as unknown as CollateralAsset;
         return (
@@ -133,10 +271,12 @@ export default function ExposurePage() {
       key: "totalExposureUsd",
       label: "Total Exposure",
       align: "right" as const,
+      width: "18%",
+      minWidth: "130px",
       render: (row: Record<string, unknown>) => {
         const a = row as unknown as CollateralAsset;
         return (
-          <span className={a.tier === 4 ? "text-red-400 font-medium" : "text-gray-200"}>
+          <span className={`font-mono ${a.tier === 4 ? "text-red-400 font-medium" : "text-gray-200"}`}>
             {formatUsd(a.totalExposureUsd)}
           </span>
         );
@@ -146,10 +286,17 @@ export default function ExposurePage() {
       key: "marketCount",
       label: "Markets",
       align: "right" as const,
+      width: "10%",
+      minWidth: "80px",
+      render: (row: Record<string, unknown>) => (
+        <span className="font-mono text-gray-300">{String(row.marketCount ?? "—")}</span>
+      ),
     },
     {
       key: "chains",
       label: "Chains",
+      width: "18%",
+      minWidth: "120px",
       render: (row: Record<string, unknown>) => {
         const a = row as unknown as CollateralAsset;
         return (
@@ -166,6 +313,8 @@ export default function ExposurePage() {
       key: "priceUsd",
       label: "Price",
       align: "right" as const,
+      width: "20%",
+      minWidth: "120px",
       render: (row: Record<string, unknown>) => {
         const a = row as unknown as CollateralAsset;
         if (!a.priceUsd || a.priceUsd === 0) return <span className="text-gray-600">—</span>;
@@ -187,17 +336,17 @@ export default function ExposurePage() {
           Markets using {a.symbol} as collateral ({a.markets.length})
         </h3>
         <div className="overflow-x-auto">
-          <table className="w-full text-xs">
+          <table className="w-full text-xs table-fixed">
             <thead>
               <tr className="text-gray-500 border-b border-gray-800/50">
-                <th className="text-left px-3 py-2">Market ID</th>
-                <th className="text-left px-3 py-2">Loan Asset</th>
-                <th className="text-left px-3 py-2">Chain</th>
-                <th className="text-right px-3 py-2">LLTV</th>
-                <th className="text-right px-3 py-2">Supply USD</th>
-                <th className="text-right px-3 py-2">Utilization</th>
-                <th className="text-left px-3 py-2">Oracle</th>
-                <th className="px-3 py-2"></th>
+                <th className="text-left px-3 py-2 w-[14%]">Market ID</th>
+                <th className="text-left px-3 py-2 w-[12%]">Loan Asset</th>
+                <th className="text-left px-3 py-2 w-[12%]">Chain</th>
+                <th className="text-right px-3 py-2 w-[10%]">LLTV</th>
+                <th className="text-right px-3 py-2 w-[16%]">Supply USD</th>
+                <th className="text-right px-3 py-2 w-[12%]">Utilization</th>
+                <th className="text-left px-3 py-2 w-[16%]">Oracle</th>
+                <th className="px-3 py-2 w-[8%]"></th>
               </tr>
             </thead>
             <tbody>
@@ -215,13 +364,13 @@ export default function ExposurePage() {
                     <td className="px-3 py-2">
                       <ChainBadge chain={m.chain} />
                     </td>
-                    <td className="px-3 py-2 text-right text-gray-300">
+                    <td className="px-3 py-2 text-right text-gray-300 font-mono">
                       {(m.lltv * 100).toFixed(0)}%
                     </td>
-                    <td className="px-3 py-2 text-right text-gray-200">
+                    <td className="px-3 py-2 text-right text-gray-200 font-mono">
                       {formatUsd(m.supplyUsd)}
                     </td>
-                    <td className="px-3 py-2 text-right text-gray-400">
+                    <td className="px-3 py-2 text-right text-gray-400 font-mono">
                       {formatPct(m.utilization)}
                     </td>
                     <td className="px-3 py-2 font-mono text-gray-500">
@@ -291,6 +440,96 @@ export default function ExposurePage() {
           icon="📊"
         />
       </div>
+
+      {/* Visualization Row: Treemap + Donut */}
+      {!isLoading && assets.length > 0 && (
+        <div className="flex flex-col lg:flex-row gap-4 mb-8">
+          {/* Treemap */}
+          <div className="lg:w-2/3 bg-gray-900 border border-gray-800 rounded-xl p-4">
+            <h2 className="text-sm font-semibold text-gray-400 mb-3">
+              🗺 Risk Exposure Map
+            </h2>
+            <ResponsiveContainer width="100%" height={300}>
+              <Treemap
+                data={treemapData}
+                dataKey="size"
+                nameKey="name"
+                content={<TreemapContent x={0} y={0} width={0} height={0} name="" exposure="" fill="" />}
+              >
+                <Tooltip content={<TreemapTooltip />} />
+              </Treemap>
+            </ResponsiveContainer>
+            <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
+              {[1, 2, 3, 4].map((t) => (
+                <div key={t} className="flex items-center gap-1.5">
+                  <span
+                    className="w-3 h-3 rounded-sm"
+                    style={{ backgroundColor: TIER_COLORS[t] }}
+                  />
+                  <span>{TIER_NAMES[t].split(" — ")[1]}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Donut */}
+          <div className="lg:w-1/3 bg-gray-900 border border-gray-800 rounded-xl p-4">
+            <h2 className="text-sm font-semibold text-gray-400 mb-3">
+              🍩 Tier Breakdown
+            </h2>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={donutData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="45%"
+                  innerRadius={60}
+                  outerRadius={95}
+                  paddingAngle={2}
+                  stroke="none"
+                >
+                  {donutData.map((entry, i) => (
+                    <Cell key={i} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip content={<DonutTooltip />} />
+                <Legend
+                  verticalAlign="bottom"
+                  iconType="circle"
+                  iconSize={8}
+                  formatter={(value: string) => (
+                    <span className="text-gray-400 text-xs">{value}</span>
+                  )}
+                />
+                {/* Center text */}
+                <text
+                  x="50%"
+                  y="42%"
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                  fill="#e5e7eb"
+                  fontSize={16}
+                  fontWeight="bold"
+                >
+                  {formatUsd(totalExposure)}
+                </text>
+                <text
+                  x="50%"
+                  y="50%"
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                  fill="#6b7280"
+                  fontSize={11}
+                >
+                  Total Exposure
+                </text>
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
 
       {/* Tier Filter Tabs */}
       <div className="flex items-center gap-1 mb-6 bg-gray-900 rounded-lg p-1 w-fit flex-wrap">
