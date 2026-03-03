@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { href: "/morpho", label: "Morpho", icon: "📊" },
   { href: "/differentials", label: "Differentials", icon: "🔀" },
   { href: "/signals", label: "Signals", icon: "🚨" },
+  { href: "/exposure", label: "Exposure", icon: "🛡" },
   { href: "/arkham", label: "Arkham", icon: "🔍" },
 ];
 
