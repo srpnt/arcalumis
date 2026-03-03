@@ -3,10 +3,9 @@ Configuration loader — reads credentials from apis.json.
 """
 
 import json
-import os
 from pathlib import Path
 
-CREDENTIALS_PATH = Path.home() / ".openclaw" / "workspace" / "credentials" / "apis.json"
+CREDENTIALS_PATH = Path.home() / ".openclaw" / "credentials" / "apis.json"
 RESEARCH_DIR = Path.home() / ".openclaw" / "workspace" / "research"
 
 
@@ -24,13 +23,16 @@ def load_credentials() -> dict:
 def get_arkham_key() -> str:
     """Get Arkham API key."""
     creds = load_credentials()
-    return creds.get("arkham", {}).get("api_key", "")
+    arkham = creds.get("arkham", {})
+    # Support both key formats
+    return arkham.get("apiKey", arkham.get("api_key", ""))
 
 
 def get_arkham_base_url() -> str:
     """Get Arkham API base URL."""
     creds = load_credentials()
-    return creds.get("arkham", {}).get("base_url", "https://api.arkhamintelligence.com")
+    arkham = creds.get("arkham", {})
+    return arkham.get("baseUrl", arkham.get("base_url", "https://api.arkm.com"))
 
 
 def get_research_files() -> list[Path]:

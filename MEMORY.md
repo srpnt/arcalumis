@@ -9,6 +9,10 @@
 - Timezone: Europe/Zagreb
 - Ran OpenClaw v0.1 before — I'm the upgrade
 - Values coherence, directness, clever naming
+- Deep DeFi knowledge — wrote a Morpho crisis simulation report (Rhino/Hawk dual-role framework) and a formal incident report addressed to Morpho team (Renan & Luciano)
+- Has experience with/interest in: Morpho curator operations, risk management, on-chain analysis
+- Developed novel CL strategy for Aerodrome (cross-position capital flow, no oracle, autonomous)
+- GitHub: srpnt
 
 ## Infrastructure
 - Host: skywalker-B650M-D3HP (AMD B650M motherboard)

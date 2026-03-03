@@ -58,8 +58,25 @@ Morpho is a modular, permissionless DeFi lending protocol. Started as a P2P opti
 - Watch for new market creation events
 - Entity tracking: who's depositing/borrowing large amounts
 
+## Crisis Playbook Reference
+Full operational playbook at `memory/morpho-crisis-playbook.md`:
+- MEV Capital bad debt case study (3.5% ETH, 12% ARB haircut)
+- 5 Hawk profit plays during crisis (liquidation sniping, vault discount, IRM farming, CEX-DEX arb, flight-to-quality)
+- 5 adversarial vectors with defenses
+- Monitoring cadence framework (block-by-block to daily)
+- Protocol metric thresholds table
+- Dune SQL for bad debt tracking
+
+## Key Insight: Collateral Asset Exposure Map
+- Morpho docs and UI lack a filter for underlying/collateral asset
+- CRITICAL for risk management: if a collateral asset becomes toxic, need to instantly see ALL markets/vaults exposed
+- Cascading liquidation risk is real (see: Stream Finance depeg Nov 2025, $285M contagion)
+- The Citadel should build this: asset → all markets using it as collateral → total exposure
+- This is a feature gap in Morpho's own tooling — competitive advantage for us
+
 ## Questions for Our Strategy
 - Which Morpho vaults offer best risk-adjusted yield?
 - How to monitor vault curator reputation/track record?
 - Automated supply/withdraw based on rate changes?
 - Integration with our wallet tracking system?
+- Build collateral exposure mapping (no existing tool does this well)

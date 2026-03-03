@@ -4,7 +4,6 @@ Display research findings from Tank's scan files.
 """
 
 import streamlit as st
-import re
 from datetime import datetime
 from pathlib import Path
 
@@ -20,29 +19,67 @@ st.markdown("""
     [data-testid="stMetric"] {
         background-color: #1a1f2e;
         border: 1px solid #2d3748;
-        border-radius: 8px;
-        padding: 1rem;
+        border-radius: 10px;
+        padding: 1rem 1.2rem;
     }
-    .signal-red {
-        border-left: 4px solid #ef4444;
-        background-color: rgba(239, 68, 68, 0.08);
-        padding: 1rem;
-        border-radius: 0 8px 8px 0;
+
+    /* Signal cards */
+    .signal-card {
+        border-radius: 10px;
+        padding: 1.2rem 1.5rem;
         margin-bottom: 1rem;
+        border-left: 5px solid;
     }
-    .signal-yellow {
-        border-left: 4px solid #f59e0b;
-        background-color: rgba(245, 158, 11, 0.08);
-        padding: 1rem;
-        border-radius: 0 8px 8px 0;
-        margin-bottom: 1rem;
+    .signal-card-red {
+        border-left-color: #ef4444;
+        background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(239, 68, 68, 0.02) 100%);
+        border-top: 1px solid rgba(239, 68, 68, 0.15);
+        border-right: 1px solid rgba(239, 68, 68, 0.08);
+        border-bottom: 1px solid rgba(239, 68, 68, 0.08);
     }
-    .signal-green {
-        border-left: 4px solid #10b981;
-        background-color: rgba(16, 185, 129, 0.08);
-        padding: 1rem;
-        border-radius: 0 8px 8px 0;
-        margin-bottom: 1rem;
+    .signal-card-yellow {
+        border-left-color: #f59e0b;
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(245, 158, 11, 0.02) 100%);
+        border-top: 1px solid rgba(245, 158, 11, 0.15);
+        border-right: 1px solid rgba(245, 158, 11, 0.08);
+        border-bottom: 1px solid rgba(245, 158, 11, 0.08);
+    }
+    .signal-card-green {
+        border-left-color: #10b981;
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(16, 185, 129, 0.02) 100%);
+        border-top: 1px solid rgba(16, 185, 129, 0.15);
+        border-right: 1px solid rgba(16, 185, 129, 0.08);
+        border-bottom: 1px solid rgba(16, 185, 129, 0.08);
+    }
+    .signal-title {
+        font-size: 1rem;
+        font-weight: 700;
+        margin-bottom: 0.3rem;
+    }
+    .signal-meta {
+        font-size: 0.78rem;
+        color: #8892b0;
+        margin-bottom: 0.5rem;
+    }
+    .signal-body {
+        font-size: 0.9rem;
+        color: #cbd5e0;
+        line-height: 1.5;
+    }
+
+    .section-header {
+        color: #00d4aa;
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 0.5rem 0;
+    }
+    .citadel-footer {
+        text-align: center;
+        padding: 1.5rem 0 0.5rem 0;
+        color: #4a5568;
+        font-size: 0.8rem;
+        border-top: 1px solid #1a1f2e;
+        margin-top: 2rem;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -51,37 +88,39 @@ st.markdown("# 🚨 Signals & Alerts")
 st.caption("Research findings and risk alerts from Tank's ecosystem scans")
 
 
-def parse_signals(content: str) -> list[dict]:
+def parse_signals(content: str, source_name: str = "") -> list[dict]:
     """Extract signals from markdown content based on emoji indicators."""
     signals = []
-
-    # Split content into sections
     lines = content.split("\n")
     current_signal = None
     current_body = []
 
     for line in lines:
         # Detect signal headers with emoji indicators
-        if "🔴" in line and ("Alert" in line or "Signal" in line or "#" in line):
+        is_signal = False
+        urgency = None
+        emoji = None
+
+        if "🔴" in line and any(kw in line for kw in ["Alert", "Signal", "#"]):
+            is_signal, urgency, emoji = True, "red", "🔴"
+        elif "🟡" in line and any(kw in line for kw in ["Signal", "Alert", "#"]):
+            is_signal, urgency, emoji = True, "yellow", "🟡"
+        elif "🟢" in line and any(kw in line for kw in ["Signal", "Alert", "Info", "#"]):
+            is_signal, urgency, emoji = True, "green", "🟢"
+
+        if is_signal:
             if current_signal:
                 current_signal["body"] = "\n".join(current_body).strip()
                 signals.append(current_signal)
-            current_signal = {"urgency": "red", "emoji": "🔴", "title": line.strip().lstrip("#").strip(), "body": ""}
-            current_body = []
-        elif "🟡" in line and ("Signal" in line or "Alert" in line or "#" in line):
-            if current_signal:
-                current_signal["body"] = "\n".join(current_body).strip()
-                signals.append(current_signal)
-            current_signal = {"urgency": "yellow", "emoji": "🟡", "title": line.strip().lstrip("#").strip(), "body": ""}
-            current_body = []
-        elif "🟢" in line and ("Signal" in line or "Alert" in line or "Info" in line or "#" in line):
-            if current_signal:
-                current_signal["body"] = "\n".join(current_body).strip()
-                signals.append(current_signal)
-            current_signal = {"urgency": "green", "emoji": "🟢", "title": line.strip().lstrip("#").strip(), "body": ""}
+            current_signal = {
+                "urgency": urgency,
+                "emoji": emoji,
+                "title": line.strip().lstrip("#").strip(),
+                "body": "",
+                "source": source_name,
+            }
             current_body = []
         elif current_signal:
-            # Stop at next major heading
             if line.startswith("## ") and not any(e in line for e in ["🔴", "🟡", "🟢"]):
                 current_signal["body"] = "\n".join(current_body).strip()
                 signals.append(current_signal)
@@ -123,15 +162,16 @@ research_files = get_research_files()
 
 if not research_files:
     st.warning("No research files found in the research directory.")
+    st.info("Place `.md` files in `~/.openclaw/workspace/research/` with signal markers (🔴🟡🟢) to see them here.")
     st.stop()
 
-# --- File selector ---
+# --- Controls ---
 col1, col2 = st.columns([3, 1])
 with col1:
     selected_file = st.selectbox(
         "📁 Research File",
         research_files,
-        format_func=lambda p: p.name,
+        format_func=lambda p: f"📄 {p.name}",
     )
 with col2:
     view_type = st.radio("View", ["Signals", "Full Report"], horizontal=True)
@@ -146,7 +186,7 @@ except Exception as e:
     st.stop()
 
 if view_type == "Signals":
-    signals = parse_signals(content)
+    signals = parse_signals(content, source_name=selected_file.name)
 
     if not signals:
         st.info("No signal markers (🔴🟡🟢) found in this file. Switch to Full Report view.")
@@ -175,26 +215,39 @@ if view_type == "Signals":
     filter_map = {"🔴 Critical": "red", "🟡 Warning": "yellow", "🟢 Info": "green"}
     active_filters = {filter_map[f] for f in urgency_filter}
 
-    # --- Display signals ---
+    # --- Display signal cards ---
     for signal in signals:
         if signal["urgency"] not in active_filters:
             continue
 
-        css_class = f"signal-{signal['urgency']}"
-        with st.container():
-            st.markdown(f'<div class="{css_class}">', unsafe_allow_html=True)
-            st.markdown(f"**{signal['title']}**")
-            if signal["body"]:
+        urgency = signal["urgency"]
+        css_class = f"signal-card signal-card-{urgency}"
+
+        urgency_label = {"red": "CRITICAL", "yellow": "WARNING", "green": "INFO"}[urgency]
+        urgency_color = {"red": "#ef4444", "yellow": "#f59e0b", "green": "#10b981"}[urgency]
+
+        # Card header
+        st.markdown(
+            f'<div class="{css_class}">'
+            f'<div class="signal-title">{signal["title"]}</div>'
+            f'<div class="signal-meta">'
+            f'<span style="color:{urgency_color};font-weight:600;">{urgency_label}</span>'
+            f' · Source: {signal.get("source", "—")}'
+            f'</div>'
+            f'</div>',
+            unsafe_allow_html=True
+        )
+
+        # Expandable body
+        if signal["body"]:
+            with st.expander("📖 Details", expanded=(urgency == "red")):
                 st.markdown(signal["body"])
-            st.markdown("</div>", unsafe_allow_html=True)
-            st.markdown("")
 
 else:
     # Full report view
     sections = extract_sections(content)
 
     if sections:
-        # Section navigator
         section_names = list(sections.keys())
         selected_section = st.selectbox("Jump to section", ["Full Document"] + section_names)
 
@@ -208,5 +261,11 @@ else:
     else:
         st.markdown(content)
 
-st.divider()
-st.caption(f"Source: {selected_file.name} | Rendered: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+# --- Footer ---
+st.markdown(
+    f'<div class="citadel-footer">'
+    f'Source: {selected_file.name} · Rendered: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}<br>'
+    f'Citadel v0.1 • Powered by Arcalumis 🦞'
+    f'</div>',
+    unsafe_allow_html=True
+)
