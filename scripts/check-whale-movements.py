@@ -85,20 +85,18 @@ def load_watchlist() -> dict:
 def get_address_balance(address: str, api_key: str) -> float | None:
     """Get total USD balance for an address via Arkham API."""
     try:
-        data = arkham_get(f"/portfolio/v2/{address}", api_key)
+        data = arkham_get(f"/balances/address/{address}", api_key)
         total_usd = 0.0
 
-        # Portfolio v2 returns chains -> tokens -> balances
-        chains = data.get("chains", {})
-        if isinstance(chains, dict):
-            for chain_data in chains.values():
-                if not isinstance(chain_data, dict):
-                    continue
-                for token_info in chain_data.values():
-                    if isinstance(token_info, dict):
-                        total_usd += float(token_info.get("usdValue", 0) or token_info.get("valueUsd", 0) or 0)
+        # /balances/address returns {"totalBalance": {"ethereum": 123, "base": 456, ...}, ...}
+        total_balance = data.get("totalBalance", {})
+        if isinstance(total_balance, dict):
+            for chain_val in total_balance.values():
+                total_usd += float(chain_val or 0)
+        elif isinstance(total_balance, (int, float)):
+            total_usd = float(total_balance)
 
-        return total_usd
+        return total_usd if total_usd > 0 else None
     except Exception as e:
         print(f"    Warning: Balance check failed for {address[:10]}...: {e}")
         return None

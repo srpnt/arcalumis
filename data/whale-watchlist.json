@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-03-03T18:54:54.559349+00:00",
+  "lastUpdated": "2026-03-03T18:56:22.450239+00:00",
   "whales": [
     {
       "address": "0xcBa28b38103307Ec8dA98377ffF9816C164f9AFa",
@@ -8,8 +8,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "MORPHO holder: 442,433,370 tokens",
-      "lastBalance": 442433370.11261415,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 37993789.40572913,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x9D03bb2092270648d7480049d0E58d2FcF0E5123",
@@ -18,8 +18,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "MORPHO holder: 398,179,161 tokens",
-      "lastBalance": 398179160.611869,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 1167523901.3641171,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x80126555b170957dfed67a3BFbB7893e20fE4fC0",
@@ -38,8 +38,8 @@
       "chain": "base",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "Top depositor in Gauntlet USDC Prime: $192,488,495; Top depositor in Steakhouse Prime USDC: $110,566,586",
-      "lastBalance": 192488495.01953152,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 691677076.778529,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x53E82ABbb12638F09d9e624578ccB666217a765e",
@@ -48,8 +48,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "Top depositor in Vault Bridge USDC: $154,516,743",
-      "lastBalance": 154516742.95869124,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 1.022928,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x2Bf5d9a2326Ad3C5Ef8208F91Af79C3ca1F0F67c",
@@ -58,8 +58,8 @@
       "chain": "base",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "Top depositor in Steakhouse Prime USDC: $151,003,699; Top depositor in Steakhouse Ethena USDtb: $50,033,114",
-      "lastBalance": 151003698.91264826,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 576.1740868998526,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x96B22EB7178d116797e57197e586b70FedAE8Fdd",
@@ -68,8 +68,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "Top depositor in Steakhouse USDT: $75,905,824",
-      "lastBalance": 75905824.41695681,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 36135.71737952463,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x6ABfd6139c7C3CC270ee2Ce132E309F59cAaF6a2",
@@ -78,8 +78,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "MORPHO holder: 67,279,050 tokens",
-      "lastBalance": 67279049.50561681,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 27224766.061806846,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0xBcC917b322590363b098251ce4c99e3184E94760",
@@ -98,8 +98,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "Top depositor in Gauntlet USDC Frontier: $63,234,407",
-      "lastBalance": 63234406.94409205,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 0.000349,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0xE8191292E7A7A7a6e951c0620a7A641596B97351",
@@ -118,8 +118,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "Top depositor in GTEST 1.0: $43,079,673",
-      "lastBalance": 43079672.83911566,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 0.009999,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x334F5d28a71432f8fc21C7B2B6F5dBbcD8B32A7b",
@@ -128,8 +128,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "Top depositor in Steakhouse USDC: $41,868,855",
-      "lastBalance": 41868854.50083547,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 37345.09519293438,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x13a5A916356242879B9509fd12bF8E4760A3F438",
@@ -138,8 +138,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "Top depositor in Gauntlet USDT Frontier: $33,545,511",
-      "lastBalance": 33545510.518548727,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 0.02418,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x323114536974D7f5BF9bF1B1D0f2a650C7e21a90",
@@ -148,8 +148,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "Top depositor in Smokehouse USDT: $31,584,364",
-      "lastBalance": 31584364.2865196,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 0.006833,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0xe80b16bA20d57E72BD8A5C5E01F7AAcadaC674E8",
@@ -178,8 +178,8 @@
       "chain": "base",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "Top depositor in Froge's USDC: $23,616,572",
-      "lastBalance": 23616572.366113123,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 87207.13026133495,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0xD00e0079B8CAB524F3fa20EA879a7736E512a5Fc",
@@ -188,8 +188,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "Top depositor in Gauntlet USDC Prime: $20,140,019; Top depositor in Steakhouse USDC: $10,411,067",
-      "lastBalance": 20140019.498251457,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 151826834.33182606,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x18709E89BD403F470088aBDAcEbE86CC60dda12e",
@@ -198,8 +198,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "Top depositor in Gauntlet USDT Frontier: $20,008,671; Top depositor in Steakhouse USDT: $20,007,573",
-      "lastBalance": 20008670.86620846,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 1442781925.8978848,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0xd49AC4bf7E1233B954095306AbacdC2249E98835",
@@ -228,8 +228,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "Top depositor in Vault Bridge USDT: $17,621,288",
-      "lastBalance": 17621287.824871037,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 0.07340932,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x75e4cE661A49B6bfb2d5b1a8231E32aB47F8b706",
@@ -238,8 +238,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "Top depositor in Steakhouse USDT: $16,442,257",
-      "lastBalance": 16442257.241803076,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 0.07998032,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x69F4894C3769BF5A635D227aa577c2C8278334AE",
@@ -258,8 +258,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "Top depositor in Smokehouse USDC: $15,284,106",
-      "lastBalance": 15284105.580840664,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 0.086711,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x7e865eD02F31Fd3e595eF4F4b893335CF7B0af9D",
@@ -268,8 +268,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "Top depositor in Gauntlet USDC Frontier: $13,180,041",
-      "lastBalance": 13180040.657434031,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 0.183287,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0xFbA64167e4f091Ca625FA79aa6f83665856f8Bf2",
@@ -278,8 +278,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "Top depositor in SwissBorg USDC: $12,644,998",
-      "lastBalance": 12644998.476191116,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 63188.31716584292,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x233a0097F9D931A435Ba92ebb832a34c39135696",
@@ -288,8 +288,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "Top depositor in Steakhouse USDT: $12,510,214",
-      "lastBalance": 12510214.024987524,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 0.001,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x1590e7F4c3E1B4493Abb462e34593aef3A9397Dd",
@@ -298,8 +298,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "MORPHO holder: 12,350,055 tokens",
-      "lastBalance": 12350055.163475554,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 8.18742e-05,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x2fE3f12227e8eECf80aFFdAd3935de48513bbE9A",
@@ -398,8 +398,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "Top depositor in Gauntlet USDC Prime: $9,305,022",
-      "lastBalance": 9305022.264362115,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 143.298438,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0xa7AF7E2E54d62E985aF91de8E902310F3Deb99B1",
@@ -418,8 +418,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "Top depositor in Gauntlet USDC Frontier: $8,333,091",
-      "lastBalance": 8333090.55877366,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 36296.859303,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x27E4B9Cc466eac6aF45bE435273779cc0f8e6833",
@@ -428,8 +428,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "Top depositor in Smokehouse USDT: $8,202,515",
-      "lastBalance": 8202515.186963061,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 0.006572,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x46595E15c42414905c31eaD164F473432dbc33B3",
@@ -438,8 +438,8 @@
       "chain": "base",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "Top depositor in Steakhouse High Yield USDC v1.1: $8,030,395",
-      "lastBalance": 8030394.889131094,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 1.99029e-15,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x000000000001CdB57E58Fa75Fe420a0f4D6640D5",
@@ -448,8 +448,8 @@
       "chain": "base",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "Top depositor in Gauntlet USDC Frontier: $7,992,049; Top depositor in Gauntlet USDC Prime: $5,948,694",
-      "lastBalance": 7992049.143537577,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 6.230403011503999e-14,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x76D2E84009dAE457f8667D823c7c96e9A7c35B78",
@@ -468,8 +468,8 @@
       "chain": "base",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "Top depositor in Seamless USDC Vault: $7,049,732",
-      "lastBalance": 7049731.79192559,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 9.206432414641425,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x4b18a4215066Fa787fE10eED5b8265Ed959aab4B",
@@ -478,8 +478,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "Top depositor in kpk USDC Prime: $7,045,317",
-      "lastBalance": 7045317.141115244,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 0.001,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0xc81aB5DE4871a447f1003B90c7Ff8C961702EEb2",
@@ -488,8 +488,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "Top depositor in Gauntlet USDC Prime: $6,893,101",
-      "lastBalance": 6893101.355104633,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 0.017549,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0xD1A1C248B253f1fc60eACd90777B9A63F8c8c1BC",
@@ -498,8 +498,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "Top depositor in Gauntlet USDC Frontier: $6,329,013",
-      "lastBalance": 6329013.21584973,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 1021163.4903155839,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x160f6eF9fCddE6ff3Febc7a57eDBFd476a8AAb5B",
@@ -508,8 +508,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "Top depositor in Gauntlet USDC Prime: $6,012,863",
-      "lastBalance": 6012863.260633491,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 57416680.96530552,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x351567b6F2Ee293c0F724A657F7d59f61361e8b0",
@@ -528,8 +528,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "Top depositor in Steakhouse USDC: $5,909,655",
-      "lastBalance": 5909654.867049664,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 3261690.84509209,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0xE85175298011C788011C49380E0729B04B368aBE",
@@ -548,8 +548,8 @@
       "chain": "base",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "Top depositor in Steakhouse Prime USDC: $5,059,982",
-      "lastBalance": 5059982.175865871,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 1560331.3232566342,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0xaFD6158E176D27F0c901492CC8717e6dE39f86C8",
@@ -558,8 +558,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "MORPHO holder: 4,000,000 tokens",
-      "lastBalance": 4000000.0,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 578.9111658139359,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0xb6914E908536e345939090A4CbCb1501F1aA13eD",
@@ -568,8 +568,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "MORPHO holder: 2,500,000 tokens",
-      "lastBalance": 2500000.0,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 68.47101111839778,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x2419B002071b5428A7E06939DD813168CA925DFe",
@@ -578,8 +578,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "MORPHO holder: 2,184,815 tokens",
-      "lastBalance": 2184815.269204393,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 38530136.60800577,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x657595426CAE8a1bCA99dfcE36C68181322D1a46",
@@ -608,8 +608,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "MORPHO holder: 1,297,907 tokens",
-      "lastBalance": 1297906.77983539,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 8750271.287199512,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x330eefa8a787552DC5cAd3C3cA644844B1E61Ddb",
@@ -618,8 +618,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "MORPHO holder: 944,521 tokens",
-      "lastBalance": 944520.947007351,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 870695.6052084094,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x74B3691EbC3Fb083E36065A1986d6C490B13E95a",
@@ -628,8 +628,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "MORPHO holder: 883,777 tokens",
-      "lastBalance": 883776.891578903,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 217.45966745719625,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x4943b0C9959dcf58871A799dfB71becE0D97c9f4",
@@ -638,8 +638,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "MORPHO holder: 648,927 tokens",
-      "lastBalance": 648927.001026713,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 44104.541508983864,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0xF057afeEc22E220f47AD4220871364e9E828b2e9",
@@ -648,8 +648,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "MORPHO holder: 508,969 tokens",
-      "lastBalance": 508968.9125126837,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 3839255.640972536,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x678dDC1d07eaa166521325394cDEb1E4c086DF43",
@@ -668,8 +668,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "MORPHO holder: 330,102 tokens",
-      "lastBalance": 330101.86899863003,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 588530.8872922879,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x10bf1Dcb5ab7860baB1C3320163C6dddf8DCC0e4",
@@ -678,8 +678,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "MORPHO holder: 280,740 tokens",
-      "lastBalance": 280739.8879868566,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 14236.155475380549,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x7B8725f3acCc33044380DF80A3544185102aDE52",
@@ -688,8 +688,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "MORPHO holder: 200,001 tokens",
-      "lastBalance": 200001.0,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 1952740.0420600001,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x7095F0B91A1010c11820B4E263927835A4CF52c9",
@@ -698,8 +698,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "MORPHO holder: 88,016 tokens",
-      "lastBalance": 88015.543743658,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 594945.6810509732,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x418F3a0aAFCD6F59eE1c99C7043D7EE19985dF24",
@@ -708,8 +708,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "MORPHO holder: 70,833 tokens",
-      "lastBalance": 70833.33333333327,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 676.6034,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x782Dde1288c30fC3F90ffC39B92Ecf76012A7965",
@@ -718,8 +718,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "MORPHO holder: 56,667 tokens",
-      "lastBalance": 56666.66666666661,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 713.3498929444282,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0xD7f0dDcBb0117A53e9ff2cad814B8B810a314f59",
@@ -728,8 +728,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "MORPHO holder: 56,417 tokens",
-      "lastBalance": 56417.1328446503,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 1149238.3534664875,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0xBAaF2b6872Eda03Ab675f46b558E345DF3b70Df4",
@@ -738,8 +738,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "MORPHO holder: 56,348 tokens",
-      "lastBalance": 56347.8125,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 1806402.631222727,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x307111465E4CedD89fa28b9768981b8768A3Cabe",
@@ -748,8 +748,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "MORPHO holder: 41,519 tokens",
-      "lastBalance": 41518.6615180166,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 255.75341393390997,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x9E1e303635910c2d398647313170b11FC41cb0dC",
@@ -758,8 +758,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "MORPHO holder: 35,241 tokens",
-      "lastBalance": 35240.742732559,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 12645.450491562462,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x4530F1232A8DCcF18453446f6fBcB86ADe5E5Eff",
@@ -768,8 +768,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "MORPHO holder: 33,463 tokens",
-      "lastBalance": 33462.8842295642,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 40510.03693336543,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x4F96F50eDB37a19216d87693E5dB241e31bD3735",
@@ -778,8 +778,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "MORPHO holder: 29,737 tokens",
-      "lastBalance": 29737.0888743568,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 1256.4742136409695,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x3be21F504fd44d0a338A8867d96FeC2CBfF4d295",
@@ -788,8 +788,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "MORPHO holder: 28,333 tokens",
-      "lastBalance": 28333.333333333307,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 342.8400015716315,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x279a7DBFaE376427FFac52fcb0883147D42165FF",
@@ -798,8 +798,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "MORPHO holder: 25,304 tokens",
-      "lastBalance": 25304.270235016815,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 1169556.429530641,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x7eA9De5D61a74836Ebf51fAF16cF015367BC81Db",
@@ -818,8 +818,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "MORPHO holder: 22,906 tokens",
-      "lastBalance": 22906.0318081708,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 76842.01107592121,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0xf30534231501FcBC870340BAbB736781e09E9602",
@@ -838,8 +838,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "MORPHO holder: 19,490 tokens",
-      "lastBalance": 19490.4418263736,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 9763.82425473631,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0xaECdDE1672f3F121B3A6C43a2e0b5Dfc28f6224c",
@@ -848,8 +848,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "MORPHO holder: 18,538 tokens",
-      "lastBalance": 18537.674821698187,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 1001.2183717727147,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x2A02E533B3A5D6D9381D6243E509EE5d1A66046d",
@@ -858,8 +858,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "MORPHO holder: 13,849 tokens",
-      "lastBalance": 13849.4839575224,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 492634.00982530945,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x1b3ddeFDFCF95E9781BBED7814c3f21A7c7d0D64",
@@ -868,8 +868,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "MORPHO holder: 13,573 tokens",
-      "lastBalance": 13573.2750318756,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 0.6643737330979169,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x72146a3eAD3A256E8A2189e3ceDC0b7BD61991eD",
@@ -878,8 +878,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "MORPHO holder: 11,385 tokens",
-      "lastBalance": 11385.3073863804,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 0.25880835033777627,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x45c6c26c118eeaE5bC756Ef2F207dD7a6a096E2c",
@@ -888,8 +888,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "MORPHO holder: 11,356 tokens",
-      "lastBalance": 11356.4379816377,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 1.98926e-15,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x4886426a04Ec6F0e22278a298B5b25cD4Df03676",
@@ -898,8 +898,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "MORPHO holder: 10,202 tokens",
-      "lastBalance": 10201.6660933845,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 104755.1554414302,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x1B72Bac3772050FDCaF468CcE7e20deb3cB02d89",
@@ -908,8 +908,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "MORPHO holder: 8,020 tokens",
-      "lastBalance": 8019.514088684034,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 6798682.386692911,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0xea25220Caf98e0097fB8401d8A44e2d4f2CEf093",
@@ -918,8 +918,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "MORPHO holder: 7,866 tokens",
-      "lastBalance": 7865.79085003436,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 87.44752976809484,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x5a54aD9860B08AAee07174887f9ee5107b0A2e72",
@@ -928,8 +928,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "MORPHO holder: 7,525 tokens",
-      "lastBalance": 7525.16549733252,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 11921.934460453851,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x036C9912D21489ec9b3Da4B5f6fdD85E0C977580",
@@ -938,8 +938,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "MORPHO holder: 7,172 tokens",
-      "lastBalance": 7171.74740169666,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 0.15972771640556346,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     },
     {
       "address": "0x2b191e528ce66E7aD22e4B9D80a7aB835FA8889a",
@@ -948,8 +948,8 @@
       "chain": "ethereum",
       "addedAt": "2026-03-03T18:54:15.131855+00:00",
       "notes": "MORPHO holder: 6,502 tokens",
-      "lastBalance": 6501.89766339179,
-      "lastChecked": "2026-03-03T18:54:15.131855+00:00"
+      "lastBalance": 1356.7656414603148,
+      "lastChecked": "2026-03-03T18:56:22.450239+00:00"
     }
   ]
 }

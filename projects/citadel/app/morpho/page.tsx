@@ -112,6 +112,7 @@ async function fetchVaultsClient(): Promise<MorphoVault[]> {
 }
 
 type ChainTab = "all" | "ethereum" | "base";
+type AssetFilter = string; // "all" or an asset symbol
 
 // --- Tooltip components ---
 
@@ -152,6 +153,7 @@ function ScatterTooltipContent({ active, payload }: ScatterTooltipProps) {
 
 export default function MorphoPage() {
   const [chainFilter, setChainFilter] = useState<ChainTab>("all");
+  const [assetFilter, setAssetFilter] = useState<AssetFilter>("all");
   const [autoRefresh, setAutoRefresh] = useState(false);
 
   const { data: vaults, error, isLoading, mutate } = useSWR(
@@ -163,9 +165,19 @@ export default function MorphoPage() {
     }
   );
 
+  // Extract unique asset symbols for the asset filter dropdown
+  const uniqueAssets = useMemo(() => {
+    const symbols = new Set<string>();
+    for (const v of vaults || []) {
+      if (v.underlyingAsset && v.underlyingAsset !== "?") symbols.add(v.underlyingAsset);
+    }
+    return Array.from(symbols).sort();
+  }, [vaults]);
+
   const filtered = (vaults || []).filter((v) => {
-    if (chainFilter === "ethereum") return v.chainId === 1;
-    if (chainFilter === "base") return v.chainId === 8453;
+    if (chainFilter === "ethereum" && v.chainId !== 1) return false;
+    if (chainFilter === "base" && v.chainId !== 8453) return false;
+    if (assetFilter !== "all" && v.underlyingAsset !== assetFilter) return false;
     return true;
   });
 
@@ -368,21 +380,39 @@ export default function MorphoPage() {
         <MetricCard label="Vaults Tracked" value={String(filtered.length)} icon="🏛" />
       </div>
 
-      {/* Chain Filter Tabs */}
-      <div className="flex items-center gap-1 mb-6 bg-gray-900 rounded-lg p-1 w-fit">
-        {(["all", "ethereum", "base"] as ChainTab[]).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setChainFilter(tab)}
-            className={`px-4 py-2 text-sm rounded-md transition-colors ${
-              chainFilter === tab
-                ? "bg-gray-700 text-gray-100 font-medium"
-                : "text-gray-500 hover:text-gray-300"
-            }`}
+      {/* Chain Filter + Asset Filter */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-6">
+        {/* Chain Filter Tabs */}
+        <div className="flex items-center gap-1 bg-gray-900 rounded-lg p-1 w-fit">
+          {(["all", "ethereum", "base"] as ChainTab[]).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setChainFilter(tab)}
+              className={`px-4 py-2 text-sm rounded-md transition-colors ${
+                chainFilter === tab
+                  ? "bg-gray-700 text-gray-100 font-medium"
+                  : "text-gray-500 hover:text-gray-300"
+              }`}
+            >
+              {tab === "all" ? "All Chains" : tab === "ethereum" ? "⟠ Ethereum" : "🔵 Base"}
+            </button>
+          ))}
+        </div>
+
+        {/* Asset Filter Dropdown */}
+        <div className="flex items-center gap-2">
+          <label className="text-xs text-gray-500">Asset:</label>
+          <select
+            value={assetFilter}
+            onChange={(e) => setAssetFilter(e.target.value)}
+            className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-300 focus:outline-none focus:border-emerald-500/50"
           >
-            {tab === "all" ? "All Chains" : tab === "ethereum" ? "⟠ Ethereum" : "🔵 Base"}
-          </button>
-        ))}
+            <option value="all">All Assets ({uniqueAssets.length})</option>
+            {uniqueAssets.map((asset) => (
+              <option key={asset} value={asset}>{asset}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Visualization Row: Bar + Scatter */}

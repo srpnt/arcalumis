@@ -20,77 +20,47 @@ interface CuratorVault {
 interface CuratorData {
   id: string;
   name: string;
-  description: string | null;
-  verified: boolean;
   image: string | null;
+  verified: boolean;
   addresses: { chainId: number; address: string }[];
   aum: number;
-  socials: { type: string; url: string }[];
   vaults: CuratorVault[];
   vaultsLoading: boolean;
-  // Enriched from Arkham
-  intelEntity: {
-    name: string;
-    id: string;
-    labels: string[];
-    website: string | null;
-    twitter: string | null;
-  } | null;
-  intelLoading: boolean;
 }
 
-interface WhaleEntry {
-  address: string;
-  entityName: string | null;
-  entityId: string | null;
-  labels: string[];
-  holdings: number;
-  percentage: number;
+interface TokenTransfer {
+  time: string;
+  from: string;
+  fromAddress: string;
+  to: string;
+  toAddress: string;
+  amount: number;
   valueUsd: number;
-  isContract: boolean;
+  txHash: string;
+  isLarge: boolean;
 }
 
-interface VaultWhaleEntry {
+interface VaultConcentrationEntry {
   rank: number;
   userAddress: string;
   vaultName: string;
   vaultAddress: string;
   chainId: number;
-  chainNetwork: string;
   depositedUsd: number;
   depositedAssets: string;
   assetSymbol: string;
-  assetDecimals: number;
-  // Enriched
-  entityName: string | null;
-  entityId: string | null;
-  intelLoading: boolean;
-}
-
-interface LookupResult {
-  entity: {
-    name: string;
-    type: string;
-    labels: string[];
-    website?: string;
-    twitter?: string;
-  } | null;
-  totalUsd: number;
-  transfers: Array<{
-    time: string;
-    from: string;
-    to: string;
-    token: string;
-    valueUsd: number;
-    txHash: string;
-  }>;
+  percentOfVault: number;
+  totalVaultUsd: number;
+  isLikelyContract: boolean;
+  riskLevel: "critical" | "high" | "moderate";
+  riskEmoji: string;
 }
 
 // ============================================================
 // Constants
 // ============================================================
 
-const MORPHO_TOKEN = "0x9994E35Db50125E0DF82e4c2dde62496CE330999";
+const MORPHO_TOKEN = "0x58D97B57BB95320F9a05dC918Aef65434969c2B2";
 const PROXY_BASE = "/api/intel";
 const MORPHO_GQL = "/api/morpho";
 
@@ -111,14 +81,6 @@ const CHAIN_COLORS: Record<number, string> = {
   137: "bg-purple-500/20 text-purple-400 border-purple-500/30",
 };
 
-const KNOWN_ENTITIES: Record<string, { color: string }> = {
-  "morpho": { color: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" },
-  "coinbase": { color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
-  "a16z": { color: "bg-orange-500/20 text-orange-400 border-orange-500/30" },
-  "apollo": { color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" },
-  "binance": { color: "bg-amber-500/20 text-amber-400 border-amber-500/30" },
-};
-
 // ============================================================
 // API Helpers
 // ============================================================
@@ -132,7 +94,7 @@ async function intelGet(path: string, params?: Record<string, string>) {
   const res = await fetch(url);
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    throw new Error(`Arkham ${res.status}: ${text.slice(0, 200)}`);
+    throw new Error(`Intel API ${res.status}: ${text.slice(0, 200)}`);
   }
   return res.json();
 }
@@ -164,17 +126,21 @@ function getEtherscanUrl(address: string, chainId: number = 1): string {
   }
 }
 
-function getEntityBadgeColor(entityName: string | null): string | null {
-  if (!entityName) return null;
-  const lower = entityName.toLowerCase();
-  for (const [key, val] of Object.entries(KNOWN_ENTITIES)) {
-    if (lower.includes(key)) return val.color;
-  }
-  return null;
+function timeAgo(dateStr: string): string {
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  const diffMs = Date.now() - d.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return "just now";
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffH = Math.floor(diffMin / 60);
+  if (diffH < 24) return `${diffH}h ago`;
+  const diffD = Math.floor(diffH / 24);
+  return `${diffD}d ago`;
 }
 
 // ============================================================
-// Component: Curator Card (Morpho API data, enriched with Arkham)
+// Component: Curator Vault Row
 // ============================================================
 
 function CuratorVaultRow({ vault }: { vault: CuratorVault }) {
@@ -203,6 +169,10 @@ function CuratorVaultRow({ vault }: { vault: CuratorVault }) {
   );
 }
 
+// ============================================================
+// Component: Curator Card
+// ============================================================
+
 function CuratorCard({ curator }: { curator: CuratorData }) {
   const [vaultsOpen, setVaultsOpen] = useState(false);
 
@@ -212,19 +182,6 @@ function CuratorCard({ curator }: { curator: CuratorData }) {
       if (!acc.find((x) => x.address.toLowerCase() === a.address.toLowerCase())) acc.push(a);
       return acc;
     }, [] as { chainId: number; address: string }[]);
-
-  const websiteUrl =
-    curator.intelEntity?.website ||
-    curator.socials.find((s) => s.type === "url")?.url ||
-    null;
-  const twitterUrl = curator.socials.find((s) => s.type === "twitter")?.url || null;
-  const forumUrl = curator.socials.find((s) => s.type === "forum")?.url || null;
-
-  const intelUrl = curator.intelEntity?.id
-    ? `https://platform.arkhamintelligence.com/explorer/entity/${curator.intelEntity.id}`
-    : ethAddresses.length > 0
-      ? `https://platform.arkhamintelligence.com/explorer/address/${ethAddresses[0].address}`
-      : null;
 
   const sortedVaults = [...curator.vaults].sort((a, b) => b.totalAssetsUsd - a.totalAssetsUsd);
 
@@ -247,16 +204,8 @@ function CuratorCard({ curator }: { curator: CuratorData }) {
                 <span className="text-emerald-500 text-xs" title="Verified">✓</span>
               )}
             </h3>
-            {curator.description && (
-              <p className="text-xs text-gray-500 mt-0.5">{curator.description}</p>
-            )}
           </div>
         </div>
-        {curator.intelLoading ? (
-          <div className="w-4 h-4 border-2 border-gray-700 border-t-emerald-500 rounded-full animate-spin" />
-        ) : (
-          <span className="text-xs text-emerald-500">●</span>
-        )}
       </div>
 
       {/* AUM */}
@@ -264,24 +213,6 @@ function CuratorCard({ curator }: { curator: CuratorData }) {
         <div className="mb-3">
           <p className="text-[10px] text-gray-600 uppercase tracking-wide mb-0.5">AUM (Morpho Vaults)</p>
           <p className="text-lg font-bold text-gray-100">{formatUsd(curator.aum)}</p>
-        </div>
-      )}
-
-      {/* Arkham entity info */}
-      {curator.intelEntity && (
-        <div className="mb-3">
-          {curator.intelEntity.labels.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mb-2">
-              {curator.intelEntity.labels.slice(0, 5).map((label, i) => (
-                <span
-                  key={i}
-                  className="px-2 py-0.5 text-[10px] bg-gray-800 border border-gray-700 text-gray-400 rounded-full"
-                >
-                  {label}
-                </span>
-              ))}
-            </div>
-          )}
         </div>
       )}
 
@@ -343,51 +274,23 @@ function CuratorCard({ curator }: { curator: CuratorData }) {
           </div>
         </div>
       )}
-
-      {/* Links */}
-      <div className="flex items-center gap-3 pt-2 border-t border-gray-800/50 flex-wrap">
-        {websiteUrl && (
-          <a href={websiteUrl} target="_blank" rel="noopener noreferrer"
-            className="text-xs text-gray-500 hover:text-emerald-400 transition-colors">
-            🌐 Website
-          </a>
-        )}
-        {twitterUrl && (
-          <a href={twitterUrl} target="_blank" rel="noopener noreferrer"
-            className="text-xs text-gray-500 hover:text-emerald-400 transition-colors">
-            𝕏 Twitter
-          </a>
-        )}
-        {forumUrl && (
-          <a href={forumUrl} target="_blank" rel="noopener noreferrer"
-            className="text-xs text-gray-500 hover:text-emerald-400 transition-colors">
-            💬 Forum
-          </a>
-        )}
-        {intelUrl && (
-          <a href={intelUrl} target="_blank" rel="noopener noreferrer"
-            className="text-xs text-emerald-500/70 hover:text-emerald-400 transition-colors ml-auto">
-            Arkham →
-          </a>
-        )}
-      </div>
     </div>
   );
 }
 
 // ============================================================
-// Component: Token Whale Table
+// Component: Token Activity Feed
 // ============================================================
 
-function TokenWhaleTable({ whales, loading, error }: {
-  whales: WhaleEntry[];
+function TokenActivityFeed({ transfers, loading, error }: {
+  transfers: TokenTransfer[];
   loading: boolean;
   error: string | null;
 }) {
   if (loading) {
     return (
       <div className="text-center py-8 text-gray-500">
-        <div className="inline-block animate-pulse">Loading MORPHO token holders...</div>
+        <div className="inline-block animate-pulse">Loading MORPHO token activity...</div>
       </div>
     );
   }
@@ -400,86 +303,110 @@ function TokenWhaleTable({ whales, loading, error }: {
     );
   }
 
-  if (whales.length === 0) {
+  if (transfers.length === 0) {
     return (
       <div className="text-center py-8 text-gray-600">
-        <p className="text-sm">No token holder data available.</p>
+        <p className="text-sm">No recent MORPHO transfer activity found.</p>
       </div>
     );
   }
 
+  const largeCount = transfers.filter(t => t.isLarge).length;
+
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-gray-800">
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">#</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Entity / Address</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Holdings (MORPHO)</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">% Supply</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">USD Value</th>
-            </tr>
-          </thead>
-          <tbody>
-            {whales.map((w, i) => {
-              const badgeColor = getEntityBadgeColor(w.entityName);
-              return (
-                <tr key={w.address} className="border-b border-gray-800/50 hover:bg-gray-800/30">
-                  <td className="px-4 py-3 text-gray-500 text-xs">{i + 1}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <div>
-                        {w.entityName && (
-                          <span className={`inline-flex items-center gap-1 text-sm font-medium ${badgeColor ? "" : "text-gray-200"}`}>
-                            {badgeColor ? (
-                              <span className={`px-2 py-0.5 rounded-md border text-xs ${badgeColor}`}>
-                                {w.entityName}
-                              </span>
-                            ) : (
-                              w.entityName
-                            )}
-                          </span>
-                        )}
-                        <a
-                          href={`https://etherscan.io/address/${w.address}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block text-xs font-mono text-gray-500 hover:text-emerald-400 transition-colors"
-                        >
-                          {formatAddress(w.address)}
-                        </a>
-                        {w.isContract && (
-                          <span className="text-[10px] text-gray-600">📄 contract</span>
-                        )}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-right text-gray-300 font-mono text-xs">
-                    {w.holdings.toLocaleString("en-US", { maximumFractionDigits: 0 })}
-                  </td>
-                  <td className="px-4 py-3 text-right text-gray-400 text-xs">
-                    {w.percentage > 0 ? `${w.percentage.toFixed(2)}%` : "—"}
-                  </td>
-                  <td className="px-4 py-3 text-right font-medium text-gray-200 text-xs">
-                    {w.valueUsd > 0 ? formatUsd(w.valueUsd) : "—"}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+    <div className="space-y-4">
+      {/* Summary */}
+      <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-center gap-6">
+        <div>
+          <p className="text-[10px] text-gray-600 uppercase tracking-wide">Recent Transfers</p>
+          <p className="text-lg font-bold text-gray-100">{transfers.length}</p>
+        </div>
+        <div className="h-8 w-px bg-gray-800" />
+        <div>
+          <p className="text-[10px] text-gray-600 uppercase tracking-wide">Large Movements (&gt;100K)</p>
+          <p className="text-lg font-bold text-amber-400">{largeCount}</p>
+        </div>
+        <div className="h-8 w-px bg-gray-800" />
+        <div>
+          <p className="text-[10px] text-gray-600 uppercase tracking-wide">Total Volume</p>
+          <p className="text-lg font-bold text-gray-100">
+            {formatUsd(transfers.reduce((sum, t) => sum + t.valueUsd, 0))}
+          </p>
+        </div>
+      </div>
+
+      {/* Activity Feed */}
+      <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+        <div className="px-4 py-3 border-b border-gray-800">
+          <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+            Recent MORPHO Token Transfers
+          </h3>
+        </div>
+        <div className="divide-y divide-gray-800/50">
+          {transfers.map((t, i) => (
+            <div
+              key={i}
+              className={`px-4 py-3 hover:bg-gray-800/30 ${t.isLarge ? "border-l-2 border-amber-500" : ""}`}
+            >
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 text-sm">
+                    {t.isLarge && <span title="Large movement (&gt;100K MORPHO)">🐋</span>}
+                    <a
+                      href={`https://etherscan.io/address/${t.fromAddress}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-mono text-gray-300 hover:text-emerald-400 transition-colors text-xs"
+                    >
+                      {t.from}
+                    </a>
+                    <span className="text-gray-600">→</span>
+                    <a
+                      href={`https://etherscan.io/address/${t.toAddress}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-mono text-gray-300 hover:text-emerald-400 transition-colors text-xs"
+                    >
+                      {t.to}
+                    </a>
+                  </div>
+                  <div className="flex items-center gap-3 mt-1">
+                    <span className={`text-xs font-mono font-medium ${t.isLarge ? "text-amber-400" : "text-gray-200"}`}>
+                      {t.amount >= 1000 ? `${(t.amount / 1000).toFixed(1)}K` : t.amount.toFixed(0)} MORPHO
+                    </span>
+                    {t.valueUsd > 0 && (
+                      <span className="text-[10px] text-gray-500">({formatUsd(t.valueUsd)})</span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className="text-[10px] text-gray-600">{t.time}</span>
+                  {t.txHash && (
+                    <a
+                      href={`https://etherscan.io/tx/${t.txHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[10px] text-gray-600 hover:text-emerald-400 font-mono"
+                    >
+                      tx →
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
 }
 
 // ============================================================
-// Component: Vault Whale Table
+// Component: Vault Concentration Table
 // ============================================================
 
-function VaultWhaleTable({ whales, loading, error }: {
-  whales: VaultWhaleEntry[];
+function VaultConcentrationTable({ entries, loading, error }: {
+  entries: VaultConcentrationEntry[];
   loading: boolean;
   error: string | null;
 }) {
@@ -499,84 +426,119 @@ function VaultWhaleTable({ whales, loading, error }: {
     );
   }
 
-  if (whales.length === 0) {
+  if (entries.length === 0) {
     return (
       <div className="text-center py-8 text-gray-600">
-        <p className="text-sm">No vault position data available.</p>
+        <p className="text-sm">No vault concentration data available.</p>
       </div>
     );
   }
 
+  // Summary metrics
+  const criticalVaults = new Set(
+    entries.filter((e) => e.percentOfVault > 50).map((e) => `${e.vaultAddress}-${e.chainId}`)
+  ).size;
+  const uniqueVaults = new Set(entries.map((e) => `${e.vaultAddress}-${e.chainId}`)).size;
+
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-gray-800">
-              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">#</th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Address</th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vault</th>
-              <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase">Chain</th>
-              <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase">Deposited (USD)</th>
-              <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase">Asset</th>
-            </tr>
-          </thead>
-          <tbody>
-            {whales.map((w) => {
-              const chainColor = CHAIN_COLORS[w.chainId] || "bg-gray-800 text-gray-400 border-gray-700";
-              return (
-                <tr key={`${w.userAddress}-${w.vaultAddress}-${w.chainId}`} className="border-b border-gray-800/50 hover:bg-gray-800/30">
-                  <td className="px-3 py-3 text-gray-500 text-xs">{w.rank}</td>
-                  <td className="px-3 py-3">
-                    <div>
-                      {w.entityName && !w.intelLoading && (
-                        <span className="text-xs font-medium text-gray-200 block">
-                          {w.entityId ? (
-                            <a
-                              href={`https://platform.arkhamintelligence.com/explorer/entity/${w.entityId}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="hover:text-emerald-400 transition-colors"
-                            >
-                              {w.entityName}
-                            </a>
-                          ) : (
-                            w.entityName
-                          )}
+    <div className="space-y-4">
+      {/* Summary */}
+      <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-center gap-6 flex-wrap">
+        <div>
+          <p className="text-[10px] text-gray-600 uppercase tracking-wide">Vaults Analyzed</p>
+          <p className="text-lg font-bold text-gray-100">{uniqueVaults}</p>
+        </div>
+        <div className="h-8 w-px bg-gray-800" />
+        <div>
+          <p className="text-[10px] text-gray-600 uppercase tracking-wide">&gt;50% Single-Depositor</p>
+          <p className={`text-lg font-bold ${criticalVaults > 0 ? "text-red-400" : "text-emerald-400"}`}>
+            {criticalVaults} vault{criticalVaults !== 1 ? "s" : ""}
+          </p>
+        </div>
+        <div className="h-8 w-px bg-gray-800" />
+        <div>
+          <p className="text-[10px] text-gray-600 uppercase tracking-wide">Positions Tracked</p>
+          <p className="text-lg font-bold text-gray-100">{entries.length}</p>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-800">
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rank</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Address</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vault</th>
+                <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase">Deposited</th>
+                <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase">% of Vault</th>
+                <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase">Concentration Risk</th>
+              </tr>
+            </thead>
+            <tbody>
+              {entries.map((e) => {
+                const chainColor = CHAIN_COLORS[e.chainId] || "bg-gray-800 text-gray-400 border-gray-700";
+                return (
+                  <tr key={`${e.userAddress}-${e.vaultAddress}-${e.chainId}`} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                    <td className="px-3 py-3 text-gray-500 text-xs">{e.rank}</td>
+                    <td className="px-3 py-3">
+                      <div>
+                        {e.isLikelyContract && (
+                          <span className="text-[10px] text-gray-500 block" title="Likely contract/bridge">🤖 contract</span>
+                        )}
+                        <a
+                          href={getEtherscanUrl(e.userAddress, e.chainId)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs font-mono text-gray-400 hover:text-emerald-400 transition-colors"
+                        >
+                          {formatAddress(e.userAddress)}
+                        </a>
+                      </div>
+                    </td>
+                    <td className="px-3 py-3">
+                      <div className="flex items-center gap-2">
+                        <a
+                          href={`https://app.morpho.org/vault?vault=${e.vaultAddress}&network=${e.chainId === 8453 ? "base" : "mainnet"}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-gray-300 hover:text-emerald-400 transition-colors"
+                        >
+                          {e.vaultName}
+                        </a>
+                        <span className={`px-1.5 py-0.5 text-[9px] rounded border ${chainColor}`}>
+                          {CHAIN_NAMES[e.chainId]?.slice(0, 3) || "?"}
                         </span>
-                      )}
-                      {w.intelLoading && (
-                        <span className="text-[10px] text-gray-600 animate-pulse">looking up...</span>
-                      )}
-                      <a
-                        href={getEtherscanUrl(w.userAddress, w.chainId)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs font-mono text-gray-500 hover:text-emerald-400 transition-colors"
-                      >
-                        {formatAddress(w.userAddress)}
-                      </a>
-                    </div>
-                  </td>
-                  <td className="px-3 py-3">
-                    <span className="text-xs text-gray-300">{w.vaultName}</span>
-                  </td>
-                  <td className="px-3 py-3 text-center">
-                    <span className={`px-2 py-0.5 text-[10px] rounded-md border ${chainColor}`}>
-                      {CHAIN_NAMES[w.chainId] || `${w.chainId}`}
-                    </span>
-                  </td>
-                  <td className="px-3 py-3 text-right font-medium text-gray-200 text-xs">
-                    {formatUsd(w.depositedUsd)}
-                  </td>
-                  <td className="px-3 py-3 text-right text-gray-400 text-xs font-mono">
-                    {w.assetSymbol}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                      </div>
+                    </td>
+                    <td className="px-3 py-3 text-right font-medium text-gray-200 text-xs">
+                      {formatUsd(e.depositedUsd)}
+                    </td>
+                    <td className="px-3 py-3 text-right text-xs">
+                      <span className={`font-mono font-medium ${
+                        e.percentOfVault >= 50 ? "text-red-400" :
+                        e.percentOfVault >= 25 ? "text-amber-400" :
+                        "text-gray-300"
+                      }`}>
+                        {e.percentOfVault.toFixed(1)}%
+                      </span>
+                    </td>
+                    <td className="px-3 py-3 text-center text-xs">
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full ${
+                        e.riskLevel === "critical" ? "bg-red-500/10 text-red-400 border border-red-500/20" :
+                        e.riskLevel === "high" ? "bg-amber-500/10 text-amber-400 border border-amber-500/20" :
+                        "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                      }`}>
+                        {e.riskEmoji} {e.riskLevel === "critical" ? "Critical" : e.riskLevel === "high" ? "High" : "Moderate"}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
@@ -586,7 +548,7 @@ function VaultWhaleTable({ whales, loading, error }: {
 // Main Page
 // ============================================================
 
-type PageTab = "curators" | "tokenWhales" | "vaultWhales" | "lookup";
+type PageTab = "curators" | "tokenActivity" | "vaultConcentration";
 
 export default function IntelPage() {
   const [activeTab, setActiveTab] = useState<PageTab>("curators");
@@ -597,28 +559,19 @@ export default function IntelPage() {
   const [curatorsError, setCuratorsError] = useState<string | null>(null);
   const curatorsLoaded = useRef(false);
 
-  // Token whale state
-  const [tokenWhales, setTokenWhales] = useState<WhaleEntry[]>([]);
-  const [tokenWhalesLoading, setTokenWhalesLoading] = useState(false);
-  const [tokenWhalesError, setTokenWhalesError] = useState<string | null>(null);
-  const tokenWhalesLoaded = useRef(false);
+  // Token activity state
+  const [tokenTransfers, setTokenTransfers] = useState<TokenTransfer[]>([]);
+  const [tokenTransfersLoading, setTokenTransfersLoading] = useState(false);
+  const [tokenTransfersError, setTokenTransfersError] = useState<string | null>(null);
+  const tokenTransfersLoaded = useRef(false);
 
-  // Vault whale state
-  const [vaultWhales, setVaultWhales] = useState<VaultWhaleEntry[]>([]);
-  const [vaultWhalesLoading, setVaultWhalesLoading] = useState(false);
-  const [vaultWhalesError, setVaultWhalesError] = useState<string | null>(null);
-  const vaultWhalesLoaded = useRef(false);
+  // Vault concentration state
+  const [vaultConcentration, setVaultConcentration] = useState<VaultConcentrationEntry[]>([]);
+  const [vaultConcentrationLoading, setVaultConcentrationLoading] = useState(false);
+  const [vaultConcentrationError, setVaultConcentrationError] = useState<string | null>(null);
+  const vaultConcentrationLoaded = useRef(false);
 
-  // Lookup state
-  const [lookupAddress, setLookupAddress] = useState("");
-  const [lookupLoading, setLookupLoading] = useState(false);
-  const [lookupResult, setLookupResult] = useState<LookupResult | null>(null);
-  const [lookupError, setLookupError] = useState<string | null>(null);
-
-  // Whale watchlist count
-  const [whaleCount, setWhaleCount] = useState<number | null>(null);
-
-  // ---- Load curators from Morpho API, enrich with Arkham ----
+  // ---- Load curators: two-step (curators endpoint + vaults endpoint, then match) ----
   const loadCurators = useCallback(async () => {
     if (curatorsLoaded.current) return;
     curatorsLoaded.current = true;
@@ -626,221 +579,204 @@ export default function IntelPage() {
     setCuratorsError(null);
 
     try {
-      const data = await morphoQuery(`{
+      // Step 1: Fetch curators from the curators endpoint
+      const curatorsData = await morphoQuery(`{
         curators(first: 50) {
           items {
             id
             name
-            description
-            verified
             image
-            addresses { chainId address }
+            verified
+            addresses { address chainId }
             state { aum }
-            socials { type url }
           }
         }
       }`);
 
-      const items = data?.curators?.items || [];
-      // Sort by AUM descending
-      const sorted = items
-        .map((c: Record<string, unknown>) => ({
-          id: c.id as string,
-          name: c.name as string,
-          description: c.description as string | null,
-          verified: c.verified as boolean,
-          image: c.image as string | null,
-          addresses: (c.addresses as { chainId: number; address: string }[]) || [],
-          aum: (c.state as { aum: number })?.aum || 0,
-          socials: (c.socials as { type: string; url: string }[]) || [],
-          vaults: [] as CuratorVault[],
-          vaultsLoading: true,
-          intelEntity: null,
-          intelLoading: true,
-        }))
-        .sort((a: CuratorData, b: CuratorData) => b.aum - a.aum)
-        .filter((c: CuratorData) => c.aum > 0); // Only show curators with AUM
-
-      setCurators(sorted);
-      setCuratorsLoading(false);
-
-      // Fetch vaults for all curators in one query using curatorAddress_in
-      try {
-        // Collect all unique curator addresses (lowercase for matching)
-        const allCuratorAddrs: string[] = [];
-        for (const c of sorted) {
-          for (const a of c.addresses) {
-            const lower = a.address.toLowerCase();
-            if (!allCuratorAddrs.includes(lower)) allCuratorAddrs.push(a.address);
+      // Step 2: Fetch all listed vaults with state.curator
+      const vaultsData = await morphoQuery(`{
+        vaults(
+          first: 200
+          where: { listed: true, chainId_in: [1, 8453] }
+          orderBy: TotalAssetsUsd
+          orderDirection: Desc
+        ) {
+          items {
+            name
+            address
+            chain { id }
+            asset { symbol }
+            state { totalAssetsUsd netApy curator }
           }
         }
+      }`);
 
-        if (allCuratorAddrs.length > 0) {
-          const vaultData = await morphoQuery(`
-            query CuratorVaults($addrs: [String!]!) {
-              vaults(
-                first: 500
-                where: { curatorAddress_in: $addrs, chainId_in: [1, 8453] }
-                orderBy: TotalAssetsUsd
-                orderDirection: Desc
-              ) {
-                items {
-                  address
-                  name
-                  chain { id network }
-                  asset { symbol }
-                  state { totalAssetsUsd netApy curator }
-                }
+      const curatorItems = curatorsData?.curators?.items || [];
+      const vaultItems = vaultsData?.vaults?.items || [];
+
+      // Step 3: Match vaults to curators
+      // Build a map of curator address -> curator data
+      interface RawCurator {
+        id: string;
+        name: string;
+        image: string | null;
+        verified: boolean;
+        addresses: { address: string; chainId: number }[];
+        state: { aum: number } | null;
+      }
+
+      const curatorAddressMap: Record<string, RawCurator> = {};
+      for (const c of curatorItems as RawCurator[]) {
+        for (const addr of c.addresses || []) {
+          curatorAddressMap[addr.address.toLowerCase()] = c;
+        }
+      }
+
+      // Group vaults by curator
+      interface RawVault {
+        name: string;
+        address: string;
+        chain: { id: number };
+        asset: { symbol: string };
+        state: { totalAssetsUsd: number; netApy: number; curator: string };
+      }
+
+      const curatorVaultsMap: Record<string, CuratorVault[]> = {};
+
+      for (const v of vaultItems as RawVault[]) {
+        const curatorAddr = (v.state?.curator || "").toLowerCase();
+        if (!curatorAddr || curatorAddr === "0x0000000000000000000000000000000000000000") continue;
+
+        const netApy = Number(v.state?.netApy || 0);
+        if (netApy > 1.0) continue; // Skip unreasonable APYs
+
+        const chainId = Number(v.chain?.id || 1);
+        const vault: CuratorVault = {
+          address: v.address,
+          name: v.name || "Unnamed Vault",
+          chainId,
+          chainNetwork: chainId === 8453 ? "base" : "mainnet",
+          assetSymbol: String(v.asset?.symbol || "?"),
+          totalAssetsUsd: Number(v.state?.totalAssetsUsd || 0),
+          netApy,
+        };
+
+        if (!curatorVaultsMap[curatorAddr]) {
+          curatorVaultsMap[curatorAddr] = [];
+        }
+        // Avoid duplicate vaults
+        if (!curatorVaultsMap[curatorAddr].find(
+          (x) => x.address.toLowerCase() === vault.address.toLowerCase() && x.chainId === vault.chainId
+        )) {
+          curatorVaultsMap[curatorAddr].push(vault);
+        }
+      }
+
+      // Step 4: Build CuratorData array
+      const curatorsArray: CuratorData[] = (curatorItems as RawCurator[])
+        .map((c) => {
+          // Find all vaults for this curator by checking all their addresses
+          const matchedVaults: CuratorVault[] = [];
+          for (const addr of c.addresses || []) {
+            const vaults = curatorVaultsMap[addr.address.toLowerCase()] || [];
+            for (const v of vaults) {
+              if (!matchedVaults.find(
+                (x) => x.address.toLowerCase() === v.address.toLowerCase() && x.chainId === v.chainId
+              )) {
+                matchedVaults.push(v);
               }
             }
-          `, { addrs: allCuratorAddrs });
-
-          const vaultItems = vaultData?.vaults?.items || [];
-
-          // Build a map: curatorAddress (lower) -> CuratorVault[]
-          const curatorVaultMap: Record<string, CuratorVault[]> = {};
-          for (const v of vaultItems) {
-            const curatorAddr = (v.state?.curator || "").toLowerCase();
-            if (!curatorVaultMap[curatorAddr]) curatorVaultMap[curatorAddr] = [];
-            curatorVaultMap[curatorAddr].push({
-              address: v.address,
-              name: v.name || "Unnamed Vault",
-              chainId: Number(v.chain?.id || 1),
-              chainNetwork: String(v.chain?.network || "ethereum"),
-              assetSymbol: String(v.asset?.symbol || "?"),
-              totalAssetsUsd: Number(v.state?.totalAssetsUsd || 0),
-              netApy: Number(v.state?.netApy || 0),
-            });
           }
 
-          // Map vaults to curators by matching curator addresses
-          setCurators((prev) =>
-            prev.map((c) => {
-              const curatorAddrsLower = c.addresses.map((a) => a.address.toLowerCase());
-              const vaults: CuratorVault[] = [];
-              for (const addr of curatorAddrsLower) {
-                if (curatorVaultMap[addr]) {
-                  for (const v of curatorVaultMap[addr]) {
-                    if (!vaults.find((x) => x.address.toLowerCase() === v.address.toLowerCase() && x.chainId === v.chainId)) {
-                      vaults.push(v);
-                    }
-                  }
-                }
-              }
-              return { ...c, vaults, vaultsLoading: false };
-            })
-          );
-        } else {
-          setCurators((prev) => prev.map((c) => ({ ...c, vaultsLoading: false })));
-        }
-      } catch {
-        // Vault fetch failed — not critical, just mark as done
-        setCurators((prev) => prev.map((c) => ({ ...c, vaultsLoading: false })));
-      }
+          const totalVaultTvl = matchedVaults.reduce((sum, v) => sum + v.totalAssetsUsd, 0);
+          const aum = Number(c.state?.aum || 0);
 
-      // Enrich with Arkham data — look up first Ethereum address for each
-      for (const curator of sorted) {
-        const ethAddr = curator.addresses.find((a: { chainId: number; address: string }) => a.chainId === 1)?.address
-          || curator.addresses[0]?.address;
-        if (!ethAddr) {
-          setCurators((prev) =>
-            prev.map((c) => c.id === curator.id ? { ...c, intelLoading: false } : c)
-          );
-          continue;
-        }
+          return {
+            id: c.id,
+            name: c.name || "Unknown",
+            image: c.image || null,
+            verified: c.verified || false,
+            addresses: c.addresses || [],
+            aum: aum > 0 ? aum : totalVaultTvl,
+            vaults: matchedVaults.sort((a, b) => b.totalAssetsUsd - a.totalAssetsUsd),
+            vaultsLoading: false,
+          };
+        })
+        .filter((c) => c.vaults.length > 0 || c.aum > 0) // Show curators with vaults or AUM
+        .sort((a, b) => b.aum - a.aum);
 
-        try {
-          const addrData = await intelGet(`/intelligence/address/${ethAddr}`);
-          const entity = addrData?.intelEntity || null;
-          setCurators((prev) =>
-            prev.map((c) =>
-              c.id === curator.id
-                ? {
-                    ...c,
-                    intelLoading: false,
-                    intelEntity: entity
-                      ? {
-                          name: entity.name || "",
-                          id: entity.id || entity.slug || "",
-                          labels: Array.isArray(entity.tags) ? entity.tags : [],
-                          website: entity.website || null,
-                          twitter: entity.twitter || null,
-                        }
-                      : null,
-                  }
-                : c
-            )
-          );
-        } catch {
-          setCurators((prev) =>
-            prev.map((c) => c.id === curator.id ? { ...c, intelLoading: false } : c)
-          );
-        }
-      }
+      setCurators(curatorsArray);
     } catch (err) {
       setCuratorsError(String(err));
+    } finally {
       setCuratorsLoading(false);
     }
   }, []);
 
-  // ---- Load MORPHO token whales from Arkham ----
-  const loadTokenWhales = useCallback(async () => {
-    if (tokenWhalesLoaded.current) return;
-    tokenWhalesLoaded.current = true;
-    setTokenWhalesLoading(true);
-    setTokenWhalesError(null);
+  // ---- Load MORPHO token transfer activity ----
+  const loadTokenTransfers = useCallback(async () => {
+    if (tokenTransfersLoaded.current) return;
+    tokenTransfersLoaded.current = true;
+    setTokenTransfersLoading(true);
+    setTokenTransfersError(null);
 
     try {
-      const data = await intelGet(`/token/holders/ethereum/${MORPHO_TOKEN}`);
-
-      const totalSupply = data?.totalSupply?.ethereum || 1_000_000_000;
-      const holders = data?.addressTopHolders?.ethereum || [];
-
-      // Try to get MORPHO price from CoinGecko
-      let morphoPrice = 0;
-      try {
-        const priceRes = await fetch(
-          "https://api.coingecko.com/api/v3/simple/price?ids=morpho&vs_currencies=usd"
-        );
-        const priceData = await priceRes.json();
-        morphoPrice = priceData?.morpho?.usd || 0;
-      } catch {
-        // Price fetch failed, we'll show "—" for USD
-      }
-
-      const entries: WhaleEntry[] = holders.slice(0, 50).map((h: Record<string, unknown>) => {
-        const addrInfo = h.address as Record<string, unknown> || {};
-        const addr = String(addrInfo.address || "");
-        const balance = Number(h.balance || 0);
-        const entity = addrInfo.intelEntity as Record<string, unknown> | null;
-        const label = addrInfo.intelLabel as Record<string, unknown> | null;
-
-        return {
-          address: addr,
-          entityName: entity?.name as string || label?.name as string || null,
-          entityId: entity?.id as string || null,
-          labels: [],
-          holdings: balance,
-          percentage: (balance / totalSupply) * 100,
-          valueUsd: morphoPrice > 0 ? balance * morphoPrice : (Number(h.usd) || 0),
-          isContract: Boolean(addrInfo.contract),
-        };
+      const data = await intelGet("/transfers", {
+        base: MORPHO_TOKEN,
+        limit: "20",
       });
 
-      setTokenWhales(entries);
+      const transfers: TokenTransfer[] = [];
+      const items = Array.isArray(data) ? data : data?.transfers || [];
+
+      for (const tx of items) {
+        if (typeof tx !== "object" || !tx) continue;
+
+        const fromAddr = tx.fromAddress || {};
+        const toAddr = tx.toAddress || {};
+        const fromName = typeof fromAddr === "object"
+          ? (fromAddr.intelEntity?.name || fromAddr.intelLabel?.name || formatAddress(fromAddr.address || ""))
+          : formatAddress(String(fromAddr));
+        const toName = typeof toAddr === "object"
+          ? (toAddr.intelEntity?.name || toAddr.intelLabel?.name || formatAddress(toAddr.address || ""))
+          : formatAddress(String(toAddr));
+        const fromAddress = typeof fromAddr === "object" ? (fromAddr.address || "") : String(fromAddr);
+        const toAddress = typeof toAddr === "object" ? (toAddr.address || "") : String(toAddr);
+
+        const tokenInfo = tx.tokenInfo || tx.token || {};
+        const decimals = Number(tokenInfo.decimals || 18);
+        const rawAmount = Number(tx.unitValue || tx.value || 0);
+        // If unitValue is already decimal, use it. Otherwise divide by 10^decimals
+        const amount = rawAmount > 1e15 ? rawAmount / Math.pow(10, decimals) : rawAmount;
+        const valueUsd = Number(tx.historicalUSD || tx.unitValueUsd || 0);
+
+        transfers.push({
+          time: timeAgo(tx.blockTimestamp || tx.timestamp || ""),
+          from: fromName,
+          fromAddress,
+          to: toName,
+          toAddress,
+          amount,
+          valueUsd,
+          txHash: tx.transactionHash || "",
+          isLarge: amount > 100_000,
+        });
+      }
+
+      setTokenTransfers(transfers);
     } catch (err) {
-      setTokenWhalesError(String(err));
+      setTokenTransfersError(String(err));
     } finally {
-      setTokenWhalesLoading(false);
+      setTokenTransfersLoading(false);
     }
   }, []);
 
-  // ---- Load vault whales from Morpho GraphQL ----
-  const loadVaultWhales = useCallback(async () => {
-    if (vaultWhalesLoaded.current) return;
-    vaultWhalesLoaded.current = true;
-    setVaultWhalesLoading(true);
-    setVaultWhalesError(null);
+  // ---- Load vault concentration data ----
+  const loadVaultConcentration = useCallback(async () => {
+    if (vaultConcentrationLoaded.current) return;
+    vaultConcentrationLoaded.current = true;
+    setVaultConcentrationLoading(true);
+    setVaultConcentrationError(null);
 
     try {
       const data = await morphoQuery(`
@@ -849,22 +785,17 @@ export default function IntelPage() {
             first: 50
             orderBy: Shares
             orderDirection: Desc
-            where: { chainId_in: [1, 8453] }
+            where: { chainId_in: [1, 8453], vaultListed: true }
           ) {
             items {
-              state {
-                assetsUsd
-                assets
-              }
-              user {
-                address
-                tag
-              }
+              user { address }
+              state { assetsUsd assets shares }
               vault {
                 name
                 address
-                chain { id network }
-                asset { symbol decimals priceUsd }
+                chain { id }
+                asset { symbol }
+                state { totalAssetsUsd }
               }
             }
           }
@@ -873,22 +804,24 @@ export default function IntelPage() {
 
       const items = data?.vaultPositions?.items || [];
 
-      // Sort by assetsUsd descending (API sorts by Shares which may differ)
-      const sorted = [...items].sort(
-        (a: Record<string, unknown>, b: Record<string, unknown>) => {
-          const aUsd = (a.state as Record<string, unknown>)?.assetsUsd as number || 0;
-          const bUsd = (b.state as Record<string, unknown>)?.assetsUsd as number || 0;
-          return bUsd - aUsd;
-        }
-      );
-
-      const entries: VaultWhaleEntry[] = sorted.map(
+      // Build entries
+      const rawEntries = items.map(
         (item: Record<string, unknown>, i: number) => {
           const state = item.state as Record<string, unknown> || {};
           const user = item.user as Record<string, unknown> || {};
           const vault = item.vault as Record<string, unknown> || {};
           const chain = vault.chain as Record<string, unknown> || {};
           const asset = vault.asset as Record<string, unknown> || {};
+          const vaultState = vault.state as Record<string, unknown> || {};
+
+          const depositedUsd = Number(state.assetsUsd || 0);
+          const totalVaultUsd = Number(vaultState.totalAssetsUsd || 0);
+          const percentOfVault = totalVaultUsd > 0 ? (depositedUsd / totalVaultUsd) * 100 : 0;
+
+          let riskLevel: "critical" | "high" | "moderate" = "moderate";
+          let riskEmoji = "🟢";
+          if (percentOfVault > 50) { riskLevel = "critical"; riskEmoji = "🔴"; }
+          else if (percentOfVault > 25) { riskLevel = "high"; riskEmoji = "🟡"; }
 
           return {
             rank: i + 1,
@@ -896,144 +829,53 @@ export default function IntelPage() {
             vaultName: String(vault.name || "Unknown Vault"),
             vaultAddress: String(vault.address || ""),
             chainId: Number(chain.id || 1),
-            chainNetwork: String(chain.network || "ethereum"),
-            depositedUsd: Number(state.assetsUsd || 0),
+            depositedUsd,
             depositedAssets: String(state.assets || "0"),
             assetSymbol: String(asset.symbol || "?"),
-            assetDecimals: Number(asset.decimals || 18),
-            entityName: String(user.tag || "") || null,
-            entityId: null,
-            intelLoading: true,
+            percentOfVault,
+            totalVaultUsd,
+            isLikelyContract: false,
+            riskLevel,
+            riskEmoji,
           };
         }
       );
 
-      setVaultWhales(entries);
-      setVaultWhalesLoading(false);
-
-      // Enrich with Arkham labels asynchronously
-      // Deduplicate addresses to avoid redundant lookups
-      const uniqueAddresses = [...new Set(entries.map((e) => e.userAddress))];
-
-      for (const addr of uniqueAddresses) {
-        try {
-          const addrData = await intelGet(`/intelligence/address/${addr}`);
-          const entity = addrData?.intelEntity || null;
-          const label = addrData?.intelLabel || null;
-          const entityName = entity?.name || label?.name || null;
-          const entityId = entity?.id || entity?.slug || null;
-
-          setVaultWhales((prev) =>
-            prev.map((w) =>
-              w.userAddress.toLowerCase() === addr.toLowerCase()
-                ? { ...w, entityName: entityName || w.entityName, entityId, intelLoading: false }
-                : w
-            )
-          );
-        } catch {
-          setVaultWhales((prev) =>
-            prev.map((w) =>
-              w.userAddress.toLowerCase() === addr.toLowerCase()
-                ? { ...w, intelLoading: false }
-                : w
-            )
-          );
+      // Detect likely contracts: addresses appearing in 2+ vaults with 99%+ share
+      const addrVaultHighShare: Record<string, number> = {};
+      for (const e of rawEntries) {
+        const key = e.userAddress.toLowerCase();
+        if (e.percentOfVault >= 99) {
+          addrVaultHighShare[key] = (addrVaultHighShare[key] || 0) + 1;
         }
       }
+
+      const entries: VaultConcentrationEntry[] = rawEntries
+        .map((e: VaultConcentrationEntry) => ({
+          ...e,
+          isLikelyContract: (addrVaultHighShare[e.userAddress.toLowerCase()] || 0) >= 2,
+        }))
+        // Sort by % of vault descending
+        .sort((a: VaultConcentrationEntry, b: VaultConcentrationEntry) => b.percentOfVault - a.percentOfVault)
+        // Filter to only show entries with >10% concentration
+        .filter((e: VaultConcentrationEntry) => e.percentOfVault > 10)
+        // Re-rank after sorting
+        .map((e: VaultConcentrationEntry, i: number) => ({ ...e, rank: i + 1 }));
+
+      setVaultConcentration(entries);
     } catch (err) {
-      setVaultWhalesError(String(err));
-      setVaultWhalesLoading(false);
+      setVaultConcentrationError(String(err));
+    } finally {
+      setVaultConcentrationLoading(false);
     }
   }, []);
-
-  // ---- Address Lookup ----
-  const doLookup = async () => {
-    const addr = lookupAddress.trim();
-    if (!addr) return;
-
-    setLookupLoading(true);
-    setLookupError(null);
-    setLookupResult(null);
-
-    try {
-      const [entityRes, portfolioRes, transfersRes] = await Promise.allSettled([
-        intelGet(`/intelligence/address/${addr}`),
-        intelGet(`/portfolio/v2/${addr}`),
-        intelGet("/transfers", { base: addr, limit: "10", usdGte: "100" }),
-      ]);
-
-      // Parse entity
-      let entity: LookupResult["entity"] = null;
-      if (entityRes.status === "fulfilled" && entityRes.value) {
-        const d = entityRes.value;
-        const e = d.intelEntity || d;
-        entity = {
-          name: e.name || e.label || "Unknown",
-          type: e.type || e.entityType || "—",
-          labels: Array.isArray(e.tags) ? e.tags : Array.isArray(e.labels) ? e.labels : [],
-          website: e.website,
-          twitter: e.twitter,
-        };
-      }
-
-      // Parse portfolio
-      let totalUsd = 0;
-      if (portfolioRes.status === "fulfilled" && portfolioRes.value?.chains) {
-        for (const chainData of Object.values(portfolioRes.value.chains)) {
-          if (typeof chainData !== "object" || chainData === null) continue;
-          for (const tokenInfo of Object.values(chainData as Record<string, unknown>)) {
-            if (typeof tokenInfo !== "object" || tokenInfo === null) continue;
-            const t = tokenInfo as Record<string, unknown>;
-            totalUsd += Number(t.usdValue || t.valueUsd || 0) || 0;
-          }
-        }
-      }
-
-      // Parse transfers
-      const transfers: LookupResult["transfers"] = [];
-      if (transfersRes.status === "fulfilled") {
-        const items = Array.isArray(transfersRes.value)
-          ? transfersRes.value
-          : transfersRes.value?.transfers || [];
-        for (const tx of items.slice(0, 10)) {
-          if (typeof tx !== "object" || !tx) continue;
-          const fromAddr = tx.fromAddress || {};
-          const toAddr = tx.toAddress || {};
-          transfers.push({
-            time: (tx.blockTimestamp || tx.timestamp || "").slice(0, 19).replace("T", " ") || "—",
-            from: typeof fromAddr === "object" ? fromAddr.intelEntity?.name || formatAddress(fromAddr.address || "") : formatAddress(String(fromAddr)),
-            to: typeof toAddr === "object" ? toAddr.intelEntity?.name || formatAddress(toAddr.address || "") : formatAddress(String(toAddr)),
-            token: typeof (tx.tokenInfo || tx.token) === "object" ? (tx.tokenInfo || tx.token)?.symbol || "?" : "?",
-            valueUsd: Number(tx.unitValue || tx.historicalUSD || 0),
-            txHash: tx.transactionHash || "",
-          });
-        }
-      }
-
-      setLookupResult({ entity, totalUsd, transfers });
-    } catch (err) {
-      setLookupError(String(err));
-    } finally {
-      setLookupLoading(false);
-    }
-  };
 
   // Auto-load data when tab switches
   useEffect(() => {
     if (activeTab === "curators") loadCurators();
-    if (activeTab === "tokenWhales") loadTokenWhales();
-    if (activeTab === "vaultWhales") loadVaultWhales();
-  }, [activeTab, loadCurators, loadTokenWhales, loadVaultWhales]);
-
-  // Load whale watchlist count
-  useEffect(() => {
-    fetch("/api/whales")
-      .then((r) => r.ok ? r.json() : null)
-      .then((data) => {
-        if (data?.whales) setWhaleCount(data.whales.length);
-      })
-      .catch(() => {}); // Silently fail if not available yet
-  }, []);
+    if (activeTab === "tokenActivity") loadTokenTransfers();
+    if (activeTab === "vaultConcentration") loadVaultConcentration();
+  }, [activeTab, loadCurators, loadTokenTransfers, loadVaultConcentration]);
 
   // ============================================================
   // Render
@@ -1041,9 +883,8 @@ export default function IntelPage() {
 
   const TABS: { key: PageTab; label: string; icon: string }[] = [
     { key: "curators", label: "Curator Tracker", icon: "🏛" },
-    { key: "tokenWhales", label: "Token Whales", icon: "🐋" },
-    { key: "vaultWhales", label: "Vault Whales", icon: "🏦" },
-    { key: "lookup", label: "Address Lookup", icon: "🔍" },
+    { key: "tokenActivity", label: "Token Activity", icon: "📡" },
+    { key: "vaultConcentration", label: "Vault Concentration", icon: "🏦" },
   ];
 
   return (
@@ -1053,15 +894,9 @@ export default function IntelPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-100">🔍 Intel Hub</h1>
           <p className="text-sm text-gray-500 mt-1">
-            Morpho curator & whale tracking — on-chain intelligence via Arkham + Morpho API
+            Morpho ecosystem intelligence — curator tracking, token flows, and concentration risk
           </p>
         </div>
-        {whaleCount !== null && whaleCount > 0 && (
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-900 border border-gray-800 rounded-lg text-xs text-gray-400">
-            <span>👁</span>
-            <span>Watching <span className="text-emerald-400 font-medium">{whaleCount}</span> whales</span>
-          </div>
-        )}
       </div>
 
       {/* Section Tabs */}
@@ -1091,7 +926,7 @@ export default function IntelPage() {
               Morpho Vault Curators
             </h2>
             <p className="text-xs text-gray-500">
-              Curators from Morpho API — addresses enriched with Intel Hubligence labels
+              All curators from the Morpho protocol with their managed vaults and AUM
             </p>
           </div>
 
@@ -1112,202 +947,56 @@ export default function IntelPage() {
               <CuratorCard key={curator.id} curator={curator} />
             ))}
           </div>
+
+          {!curatorsLoading && !curatorsError && curators.length === 0 && (
+            <div className="text-center py-8 text-gray-600">
+              <p className="text-sm">No curators found.</p>
+            </div>
+          )}
         </div>
       )}
 
       {/* ============================================================ */}
-      {/* Tab 2: Token Whales */}
+      {/* Tab 2: Token Activity */}
       {/* ============================================================ */}
-      {activeTab === "tokenWhales" && (
+      {activeTab === "tokenActivity" && (
         <div>
           <div className="mb-6">
             <h2 className="text-sm font-semibold text-emerald-400 uppercase tracking-wide mb-1">
-              🐋 MORPHO Token Whales
+              📡 MORPHO Token Activity
             </h2>
             <p className="text-xs text-gray-500">
-              Top MORPHO token holders on Ethereum (contract: {formatAddress(MORPHO_TOKEN)})
+              Recent MORPHO token transfers — large movements (&gt;100K) highlighted
             </p>
           </div>
 
-          <TokenWhaleTable
-            whales={tokenWhales}
-            loading={tokenWhalesLoading}
-            error={tokenWhalesError}
+          <TokenActivityFeed
+            transfers={tokenTransfers}
+            loading={tokenTransfersLoading}
+            error={tokenTransfersError}
           />
         </div>
       )}
 
       {/* ============================================================ */}
-      {/* Tab 3: Vault Whales */}
+      {/* Tab 3: Vault Concentration */}
       {/* ============================================================ */}
-      {activeTab === "vaultWhales" && (
+      {activeTab === "vaultConcentration" && (
         <div>
           <div className="mb-6">
             <h2 className="text-sm font-semibold text-emerald-400 uppercase tracking-wide mb-1">
-              🏦 Morpho Vault Whales
+              🏦 Vault Concentration Risk
             </h2>
             <p className="text-xs text-gray-500">
-              Largest depositors across Morpho vaults (Ethereum + Base) — enriched with Arkham labels
+              Identifies single-depositor concentration risk across Morpho vaults
             </p>
           </div>
 
-          <VaultWhaleTable
-            whales={vaultWhales}
-            loading={vaultWhalesLoading}
-            error={vaultWhalesError}
+          <VaultConcentrationTable
+            entries={vaultConcentration}
+            loading={vaultConcentrationLoading}
+            error={vaultConcentrationError}
           />
-        </div>
-      )}
-
-      {/* ============================================================ */}
-      {/* Tab 4: Address Lookup */}
-      {/* ============================================================ */}
-      {activeTab === "lookup" && (
-        <div>
-          <div className="mb-6">
-            <h2 className="text-sm font-semibold text-emerald-400 uppercase tracking-wide mb-1">
-              Address Lookup
-            </h2>
-            <p className="text-xs text-gray-500">
-              Look up any Ethereum address for entity info, balances, and recent transfers
-            </p>
-          </div>
-
-          {/* Search */}
-          <div className="flex gap-2 mb-8">
-            <input
-              type="text"
-              value={lookupAddress}
-              onChange={(e) => setLookupAddress(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && doLookup()}
-              placeholder="0x742d35Cc6634C0532925a3b844Bc9e7595f2bD1e"
-              className="flex-1 bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-emerald-500/50 font-mono"
-            />
-            <button
-              onClick={doLookup}
-              disabled={lookupLoading}
-              className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
-            >
-              {lookupLoading ? "..." : "🔍 Lookup"}
-            </button>
-          </div>
-
-          {lookupError && (
-            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-6 text-red-400 text-sm">
-              ❌ {lookupError}
-            </div>
-          )}
-
-          {lookupLoading && (
-            <div className="text-center py-12 text-gray-500">
-              <div className="inline-block animate-pulse">Looking up address...</div>
-            </div>
-          )}
-
-          {lookupResult && !lookupLoading && (
-            <div className="space-y-4">
-              {/* Entity Info */}
-              <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-                <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">Entity Info</h3>
-                {lookupResult.entity ? (
-                  <div>
-                    <h4 className="text-xl font-bold text-gray-100">{lookupResult.entity.name}</h4>
-                    <p className="text-sm text-gray-500 mt-1">
-                      {lookupResult.entity.type} •{" "}
-                      <span className="font-mono text-xs">{formatAddress(lookupAddress)}</span>
-                    </p>
-                    {lookupResult.entity.labels.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-3">
-                        {lookupResult.entity.labels.map((label, i) => (
-                          <span key={i}
-                            className="px-3 py-1 text-xs bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-full">
-                            {label}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    <div className="flex items-center gap-4 mt-4">
-                      {lookupResult.entity.website && (
-                        <a href={lookupResult.entity.website} target="_blank" rel="noopener noreferrer"
-                          className="text-xs text-emerald-400 hover:underline">
-                          🌐 {lookupResult.entity.website}
-                        </a>
-                      )}
-                      {lookupResult.entity.twitter && (
-                        <a href={lookupResult.entity.twitter}
-                          target="_blank" rel="noopener noreferrer"
-                          className="text-xs text-emerald-400 hover:underline">
-                          𝕏 Twitter
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-500">No entity data found — may be an unlabeled wallet.</p>
-                )}
-
-                {lookupResult.totalUsd > 0 && (
-                  <div className="mt-4 pt-4 border-t border-gray-800">
-                    <p className="text-xs text-gray-500">Portfolio Value</p>
-                    <p className="text-2xl font-bold text-gray-100 mt-1">{formatUsd(lookupResult.totalUsd)}</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Transfers */}
-              {lookupResult.transfers.length > 0 && (
-                <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-                  <div className="px-4 py-3 border-b border-gray-800">
-                    <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                      Recent Transfers
-                    </h3>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-gray-800">
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">From</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">To</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Token</th>
-                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Value</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">TX</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {lookupResult.transfers.map((t, i) => (
-                          <tr key={i} className="border-b border-gray-800/50 hover:bg-gray-800/30">
-                            <td className="px-4 py-3 text-gray-400 text-xs whitespace-nowrap">{t.time}</td>
-                            <td className="px-4 py-3 text-gray-300 font-mono text-xs">{t.from}</td>
-                            <td className="px-4 py-3 text-gray-300 font-mono text-xs">{t.to}</td>
-                            <td className="px-4 py-3 text-gray-200 font-medium">{t.token}</td>
-                            <td className="px-4 py-3 text-right text-gray-200 font-medium">
-                              {t.valueUsd > 0 ? formatUsd(t.valueUsd) : "—"}
-                            </td>
-                            <td className="px-4 py-3 text-gray-500 font-mono text-xs">
-                              {t.txHash ? (
-                                <a href={`https://etherscan.io/tx/${t.txHash}`} target="_blank" rel="noopener noreferrer"
-                                  className="hover:text-emerald-400">
-                                  {t.txHash.slice(0, 10)}...
-                                </a>
-                              ) : "—"}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {!lookupResult && !lookupLoading && !lookupError && (
-            <div className="text-center py-16 text-gray-600">
-              <p className="text-4xl mb-4">🔍</p>
-              <p className="text-sm">Enter an Ethereum address to look up entity info and activity</p>
-            </div>
-          )}
         </div>
       )}
     </div>

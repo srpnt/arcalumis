@@ -183,6 +183,7 @@ function DonutTooltip({ active, payload }: ChartTooltipProps) {
 
 export default function ExposurePage() {
   const [tierFilter, setTierFilter] = useState<TierFilter>("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { data, error, isLoading, mutate } = useSWR(
     "collateral-exposure",
@@ -194,8 +195,11 @@ export default function ExposurePage() {
   );
 
   const assets = data?.assets || [];
-  const filtered =
-    tierFilter === "all" ? assets : assets.filter((a) => a.tier === tierFilter);
+  const filtered = assets.filter((a) => {
+    if (tierFilter !== "all" && a.tier !== tierFilter) return false;
+    if (searchQuery.trim() && !a.symbol.toLowerCase().includes(searchQuery.trim().toLowerCase())) return false;
+    return true;
+  });
 
   // Build table-friendly rows
   const rows = filtered.map((a) => ({
@@ -203,9 +207,9 @@ export default function ExposurePage() {
     uniqueId: a.symbol,
   }));
 
-  // --- Treemap data: top 25 assets by exposure ---
+  // --- Treemap data: top 25 assets by exposure (respects search + tier filter) ---
   const treemapData = useMemo(() => {
-    const sorted = [...assets]
+    const sorted = [...filtered]
       .sort((a, b) => b.totalExposureUsd - a.totalExposureUsd)
       .slice(0, 25);
     return sorted.map((a) => ({
@@ -216,7 +220,7 @@ export default function ExposurePage() {
       tierLabel: a.tierLabel,
       fill: TIER_COLORS[a.tier] || TIER_COLORS[4],
     }));
-  }, [assets]);
+  }, [filtered]);
 
   // --- Donut data: tier breakdown ---
   const donutData = useMemo(() => {
@@ -531,8 +535,9 @@ export default function ExposurePage() {
         </div>
       )}
 
-      {/* Tier Filter Tabs */}
-      <div className="flex items-center gap-1 mb-6 bg-gray-900 rounded-lg p-1 w-fit flex-wrap">
+      {/* Tier Filter Tabs + Search */}
+      <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
+        <div className="flex items-center gap-1 bg-gray-900 rounded-lg p-1 flex-wrap">
         {(
           [
             { val: "all" as TierFilter, label: "All Tiers" },
@@ -554,6 +559,31 @@ export default function ExposurePage() {
             {tab.label}
           </button>
         ))}
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search assets..."
+              className="w-48 bg-gray-900 border border-gray-800 rounded-lg pl-4 pr-8 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-emerald-500/50"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors text-sm"
+                title="Clear search"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+          <span className="text-xs text-gray-500 whitespace-nowrap">
+            {filtered.length}/{assets.length}
+          </span>
+        </div>
       </div>
 
       {/* Error */}

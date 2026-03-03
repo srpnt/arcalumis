@@ -23,7 +23,7 @@ WORKSPACE = Path(os.environ.get("HOME", "/home/piton")) / ".openclaw" / "workspa
 CREDS_PATH = WORKSPACE / "credentials" / "apis.json"
 OUTPUT_PATH = WORKSPACE / "data" / "whale-watchlist.json"
 
-MORPHO_TOKEN = "0x9994E35Db50125E0DF82e4c2dde62496CE330999"
+MORPHO_TOKEN = "0x58D97B57BB95320F9a05dC918Aef65434969c2B2"
 MORPHO_GQL = "https://api.morpho.org/graphql"
 
 # Citadel dev server proxy (bypasses credential redaction in sandboxed envs)
