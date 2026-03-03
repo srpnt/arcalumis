@@ -221,9 +221,9 @@ function CuratorCard({ curator }: { curator: CuratorData }) {
   const forumUrl = curator.socials.find((s) => s.type === "forum")?.url || null;
 
   const intelUrl = curator.intelEntity?.id
-    ? `https://platform.intelintelligence.com/explorer/entity/${curator.intelEntity.id}`
+    ? `https://platform.arkhamintelligence.com/explorer/entity/${curator.intelEntity.id}`
     : ethAddresses.length > 0
-      ? `https://platform.intelintelligence.com/explorer/address/${ethAddresses[0].address}`
+      ? `https://platform.arkhamintelligence.com/explorer/address/${ethAddresses[0].address}`
       : null;
 
   const sortedVaults = [...curator.vaults].sort((a, b) => b.totalAssetsUsd - a.totalAssetsUsd);
@@ -533,7 +533,7 @@ function VaultWhaleTable({ whales, loading, error }: {
                         <span className="text-xs font-medium text-gray-200 block">
                           {w.entityId ? (
                             <a
-                              href={`https://platform.intelintelligence.com/explorer/entity/${w.entityId}`}
+                              href={`https://platform.arkhamintelligence.com/explorer/entity/${w.entityId}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="hover:text-emerald-400 transition-colors"
