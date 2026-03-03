@@ -290,7 +290,7 @@ function ROICalculator({
   );
 }
 
-export default function Yield ComparisonPage() {
+export default function YieldComparisonPage() {
   const [minTvl, setMinTvl] = useState(1_000_000);
   const [roiCapital, setRoiCapital] = useState(100000);
   const [roiAsset, setRoiAsset] = useState("");
