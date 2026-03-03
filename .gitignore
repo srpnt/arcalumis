@@ -1,0 +1,15 @@
+# OpenClaw internal
+.openclaw/
+
+# Secrets - never commit
+*.secret
+*.key
+*.pem
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backups
+*.tar.gz
