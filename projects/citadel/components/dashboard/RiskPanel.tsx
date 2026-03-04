@@ -65,7 +65,7 @@ export default function RiskPanel({
           </p>
         </div>
         <Link
-          href="/exposure"
+          href="/risk"
           className="text-[10px] text-emerald-500 hover:text-emerald-400 transition-colors"
         >
           View details →
@@ -147,7 +147,7 @@ export default function RiskPanel({
             {criticalCount !== 1 ? "s" : ""}
           </p>
           <Link
-            href="/signals"
+            href="/risk"
             className="text-[10px] text-red-400/70 hover:text-red-300 mt-1 inline-block"
           >
             Review now →

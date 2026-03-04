@@ -2,48 +2,86 @@
 
 import Link from "next/link";
 import useSWR from "swr";
-import { formatUsd, formatPct } from "@/lib/format";
-import { getMorphoVaultUrl } from "@/lib/chains";
-import { useDashboardData } from "@/components/dashboard/useDashboardData";
-import DashboardMetricCard from "@/components/dashboard/DashboardMetricCard";
-import UtilizationAlerts from "@/components/dashboard/UtilizationAlerts";
-import RateOpportunities from "@/components/dashboard/RateOpportunities";
-import RecentSignals from "@/components/dashboard/RecentSignals";
-import RiskPanel from "@/components/dashboard/RiskPanel";
+import NodeStatus from "@/components/execution/NodeStatus";
+import PortfolioCards from "@/components/execution/PortfolioCards";
+import PositionsTable from "@/components/execution/PositionsTable";
+import { formatAddress, formatPct } from "@/lib/format";
+import { CHAIN_NAMES } from "@/lib/chains";
 
 // ============================================================
-// Color helpers
+// Types
 // ============================================================
 
-function utilizationColor(u: number): string {
-  if (u >= 0.9) return "text-red-400";
-  if (u >= 0.8) return "text-amber-400";
-  return "text-emerald-400";
+interface NodeStatusData {
+  status: string;
+  smartAccount?: string;
+  chains?: Array<{
+    chainId: number;
+    ethFormatted?: string;
+    tokenBalances?: Array<{
+      symbol: string;
+      balance: string;
+    }>;
+  }>;
+  uptime?: number;
+  [key: string]: unknown;
 }
 
-function utilizationBg(u: number): string {
-  if (u >= 0.9) return "bg-red-500/10 border-red-500/20";
-  if (u >= 0.8) return "bg-amber-500/10 border-amber-500/20";
-  return "bg-emerald-500/10 border-emerald-500/20";
+interface Position {
+  chainId: number;
+  chain?: string;
+  marketId: string;
+  collateralAsset: string;
+  loanAsset: string;
+  collateralSymbol?: string;
+  loanSymbol?: string;
+  supplyShares: string;
+  borrowShares: string;
+  collateral?: string;
+  supplyApy?: number;
+  borrowApy?: number;
+  tvl?: number;
 }
 
-function gasColor(gwei: number): string {
-  if (gwei >= 100) return "text-red-400";
-  if (gwei >= 30) return "text-amber-400";
-  return "text-emerald-400";
+interface PositionsData {
+  positions: Position[];
+  balances?: Array<{
+    chainId: number;
+    ethBalance: string;
+    tokens?: Array<{
+      symbol: string;
+      balance: string;
+      decimals: number;
+    }>;
+  }>;
 }
 
-function gasBg(gwei: number): string {
-  if (gwei >= 100) return "bg-red-500/10 border-red-500/20";
-  if (gwei >= 30) return "bg-amber-500/10 border-amber-500/20";
-  return "bg-emerald-500/10 border-emerald-500/20";
+interface Opportunity {
+  asset: string;
+  grossSpread: number;
+  supplyChain: string;
+  supplyChainId?: number;
+  borrowChain: string;
+  borrowChainId?: number;
+  supplyApy: number;
+  borrowApy: number;
+  riskScore?: number;
+}
+
+interface OpportunitiesData {
+  opportunities: Opportunity[];
+}
+
+interface MorphoSummary {
+  totalVaults: number;
+  bestSpread?: number;
+  chainsMonitored?: number;
 }
 
 // ============================================================
-// Component
+// Fetchers
 // ============================================================
 
-// Node fetcher that doesn't throw on offline
 const nodeFetcher = async (url: string) => {
   try {
     const res = await fetch(url);
@@ -54,195 +92,237 @@ const nodeFetcher = async (url: string) => {
   }
 };
 
-export default function Home() {
+const apiFetcher = async (url: string) => {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+};
+
+// ============================================================
+// Helpers
+// ============================================================
+
+function getExplorerUrl(address: string): string {
+  return `https://basescan.org/address/${address}`;
+}
+
+function riskBadge(score?: number) {
+  if (score === undefined || score === null) return null;
+  if (score >= 8) return <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">Low</span>;
+  if (score >= 5) return <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/20">Med</span>;
+  return <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/15 text-red-400 border border-red-500/20">High</span>;
+}
+
+// ============================================================
+// Page
+// ============================================================
+
+export default function CommandCenter() {
   const {
-    morphoData,
-    morphoLoading,
-    signalsData,
-    exposureData,
-    whalesData,
-    gasData,
-    stableData,
-    loading,
-  } = useDashboardData();
+    data: statusData,
+    error: statusError,
+    isLoading: statusLoading,
+  } = useSWR<NodeStatusData>("/api/node/status", nodeFetcher, {
+    refreshInterval: 30_000,
+    revalidateOnFocus: false,
+    shouldRetryOnError: false,
+  });
 
-  // Execution node positions
-  const { data: nodePositions } = useSWR(
-    "/api/node/positions",
-    nodeFetcher,
-    { refreshInterval: 30_000, revalidateOnFocus: false }
-  );
-  const { data: nodeStatus } = useSWR(
-    "/api/node/status",
-    nodeFetcher,
-    { refreshInterval: 30_000, revalidateOnFocus: false }
-  );
-  const positionsCount = nodePositions?.positions?.length ?? 0;
-  const nodeOnline = !!nodeStatus;
+  const {
+    data: positionsData,
+    isLoading: positionsLoading,
+  } = useSWR<PositionsData>("/api/node/positions", nodeFetcher, {
+    refreshInterval: 30_000,
+    revalidateOnFocus: false,
+    shouldRetryOnError: false,
+  });
 
-  // Derived data
-  const totalTvl = morphoData?.totalTvl ?? 0;
-  const avgUtil = morphoData?.avgUtilization ?? 0;
-  const bestYield = morphoData?.bestYield ?? 0;
-  const bestVaultName = morphoData?.bestVaultName ?? "—";
-  const bestVaultAddress = morphoData?.bestVaultAddress ?? "";
-  const bestVaultChainId = morphoData?.bestVaultChainId ?? 1;
-  const topVaults = morphoData?.topVaults ?? [];
-  const highUtilVaults = morphoData?.highUtilVaults ?? [];
-  const signals = signalsData?.signals ?? [];
-  const tier4Usd = exposureData?.tier4ExposureUsd ?? 0;
-  const tier4Count =
-    exposureData?.assets?.filter((a) => a.tier === 4).length ?? 0;
-  const whales = whalesData?.whales ?? [];
+  const {
+    data: opportunitiesData,
+  } = useSWR<OpportunitiesData>("/api/node/opportunities", nodeFetcher, {
+    refreshInterval: 30_000,
+    revalidateOnFocus: false,
+    shouldRetryOnError: false,
+  });
 
-  // Concentration data
-  const vaultWhales = whales.filter(
-    (w) => w.source === "morpho-vault-whale" && w.notes
-  );
-  const concentrations = vaultWhales
-    .flatMap((w) => {
-      const matches = w.notes.matchAll(
-        /Top depositor in ([^:]+):\s*\$([\d,]+)/g
-      );
-      return [...matches].map((m) => ({
-        vault: m[1].trim(),
-        amount: parseFloat(m[2].replace(/,/g, "")),
-        label: w.label,
-        address: w.address,
-      }));
-    })
-    .sort((a, b) => b.amount - a.amount);
+  const { data: arbData } = useSWR("/api/arbitrage", apiFetcher, {
+    refreshInterval: 300_000,
+    revalidateOnFocus: false,
+  });
 
-  const worstConcentration = concentrations[0];
-  const highConcCount = concentrations.length;
+  const nodeOnline = !statusError && !!statusData;
+  const smartAccount = statusData?.smartAccount || "";
+  const positions = positionsData?.positions || [];
+  const opportunities = (opportunitiesData?.opportunities || []).slice(0, 5);
 
-  const morphoVaultUrl = bestVaultAddress
-    ? getMorphoVaultUrl(bestVaultAddress, bestVaultChainId)
-    : "/morpho";
+  // Portfolio balances from node status
+  const balances = (statusData?.chains || []).map((c) => ({
+    chainId: c.chainId,
+    ethBalance: c.ethFormatted || "0",
+    tokens: (c.tokenBalances || []).map((t) => ({
+      symbol: t.symbol,
+      balance: t.balance,
+      decimals: ["USDC", "USDT", "EURC"].includes(t.symbol) ? 6 : 18,
+    })),
+  }));
 
-  const gasGwei = gasData?.proposeGwei ?? 0;
+  // Quick stats from arbitrage API
+  const totalMarkets = arbData?.totalOpportunities ?? 0;
+  const bestSpread = arbData?.bestSpread ?? 0;
+  const chainsTracked = arbData?.chainsMonitored ?? 0;
 
   return (
     <div className="pt-8 md:pt-0">
       {/* Header */}
-      <div className="mb-5 flex items-baseline gap-3">
-        <h1 className="text-xl font-bold text-gray-100">
-          Protocol Health Monitor
-        </h1>
-        <span className="text-[10px] text-gray-600 font-mono">
-          {loading
-            ? "⟳ REFRESHING"
-            : `UPD ${new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`}
-        </span>
-      </div>
-
-      {/* Row 1: Metric Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 mb-4">
-        <Link href="/morpho">
-          <DashboardMetricCard
-            label="Total TVL"
-            value={formatUsd(totalTvl)}
-            sub="All listed vaults"
-            loading={morphoLoading}
-          />
-        </Link>
-
-        <DashboardMetricCard
-          label="Avg Utilization"
-          value={formatPct(avgUtil)}
-          sub="Weighted by TVL"
-          loading={morphoLoading}
-          colorClass={utilizationColor(avgUtil)}
-          bgClass={utilizationBg(avgUtil)}
-        />
-
-        <a href={morphoVaultUrl} target="_blank" rel="noopener noreferrer">
-          <DashboardMetricCard
-            label="🔥 Best Yield"
-            value={formatPct(bestYield)}
-            sub={bestVaultName}
-            colorClass="text-emerald-400"
-            loading={morphoLoading}
-          />
-        </a>
-
-        <Link href="/exposure">
-          <DashboardMetricCard
-            label="Exotic Exposure"
-            value={formatUsd(tier4Usd)}
-            sub={`${tier4Count} Tier 4 assets`}
-            colorClass={tier4Usd > 500_000_000 ? "text-red-400" : "text-amber-400"}
-            bgClass={
-              tier4Usd > 500_000_000
-                ? "bg-red-500/10 border-red-500/20"
-                : "bg-amber-500/10 border-amber-500/20"
-            }
-            loading={!exposureData}
-          />
-        </Link>
-
-        <DashboardMetricCard
-          label="⛽ Gas"
-          value={gasGwei > 0 ? `${gasGwei.toFixed(1)} gwei` : "—"}
-          sub="ETH standard"
-          colorClass={gasColor(gasGwei)}
-          bgClass={gasBg(gasGwei)}
-          loading={!gasData}
-        />
-      </div>
-
-      {/* Execution Node Card */}
-      <div className="mb-4">
-        <Link href="/execution">
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-emerald-500/30 hover:bg-gray-800/50 transition-all cursor-pointer">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <span className="text-lg">🏰</span>
-                <div>
-                  <p className="text-sm font-medium text-gray-200">
-                    Active Positions
-                  </p>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    {nodeOnline
-                      ? positionsCount > 0
-                        ? `${positionsCount} open position${positionsCount !== 1 ? "s" : ""}`
-                        : "No open positions"
-                      : "Node offline"}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <span
-                  className={`w-2 h-2 rounded-full ${
-                    nodeOnline ? "bg-emerald-500 animate-pulse" : "bg-red-500"
-                  }`}
-                />
-                <span className="text-xs text-gray-600">→</span>
-              </div>
-            </div>
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-6">
+        <div>
+          <div className="flex items-center gap-3 mb-1">
+            <h1 className="text-2xl font-bold text-gray-100">
+              🏰 The Citadel
+            </h1>
+            <NodeStatus online={nodeOnline} loading={statusLoading} />
           </div>
-        </Link>
-      </div>
-
-      {/* Row 2: Protocol Monitor (2/3) + Risk Panel (1/3) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        {/* Left: Protocol Monitor */}
-        <div className="lg:col-span-2 space-y-3">
-          <UtilizationAlerts highUtilVaults={highUtilVaults} />
-          <RateOpportunities topVaults={topVaults} />
-          <RecentSignals signals={signals} />
+          {smartAccount && (
+            <a
+              href={getExplorerUrl(smartAccount)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 mt-1 text-xs font-mono text-gray-400 hover:text-emerald-400 transition-colors"
+            >
+              {formatAddress(smartAccount)}
+              <span className="text-[10px]">↗</span>
+            </a>
+          )}
         </div>
-
-        {/* Right: Risk Panel */}
-        <RiskPanel
-          tier4Usd={tier4Usd}
-          tier4Count={tier4Count}
-          highConcCount={highConcCount}
-          worstConcentration={worstConcentration}
-          stableData={stableData}
-          signals={signals}
-        />
       </div>
+
+      {/* Offline Banner */}
+      {!statusLoading && !nodeOnline && (
+        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-6 text-sm text-red-400">
+          <span className="font-medium">Node offline</span> — The execution
+          node at localhost:4100 is not responding. Start the node to see live
+          data.
+        </div>
+      )}
+
+      {/* Portfolio Strip */}
+      <section className="mb-6">
+        <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-3">
+          Portfolio
+        </h2>
+        <PortfolioCards
+          balances={balances}
+          loading={nodeOnline && positionsLoading}
+        />
+      </section>
+
+      {/* Active Positions */}
+      <section className="mb-6">
+        <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-3">
+          Active Positions
+        </h2>
+        <PositionsTable
+          positions={positions}
+          loading={nodeOnline && positionsLoading}
+        />
+      </section>
+
+      {/* Top Opportunities */}
+      <section className="mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">
+            Top Opportunities
+          </h2>
+          <Link
+            href="/arbitrage"
+            className="text-[10px] text-emerald-500 hover:text-emerald-400 transition-colors"
+          >
+            View all →
+          </Link>
+        </div>
+        {opportunities.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+            {opportunities.map((opp, i) => (
+              <Link
+                key={`${opp.asset}-${opp.supplyChainId}-${opp.borrowChainId}-${i}`}
+                href="/arbitrage"
+                className="bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-emerald-500/20 transition-colors block"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-200">
+                    {opp.asset}
+                  </span>
+                  <span className="text-xs font-mono text-emerald-400">
+                    +{((opp.grossSpread || 0) * 100).toFixed(2)}%
+                  </span>
+                </div>
+                <div className="text-[11px] text-gray-500">
+                  <span className="text-gray-400">
+                    {opp.supplyChainId
+                      ? CHAIN_NAMES[opp.supplyChainId] || opp.supplyChain
+                      : opp.supplyChain}
+                  </span>
+                  <span className="mx-1">→</span>
+                  <span className="text-gray-400">
+                    {opp.borrowChainId
+                      ? CHAIN_NAMES[opp.borrowChainId] || opp.borrowChain
+                      : opp.borrowChain}
+                  </span>
+                </div>
+                <div className="flex justify-between mt-2 text-[10px] text-gray-600">
+                  <span>Supply {(opp.supplyApy * 100).toFixed(1)}%</span>
+                  <span>Borrow {(opp.borrowApy * 100).toFixed(1)}%</span>
+                </div>
+                {opp.riskScore !== undefined && (
+                  <div className="mt-2 flex justify-end">
+                    {riskBadge(opp.riskScore)}
+                  </div>
+                )}
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 text-center text-sm text-gray-500">
+            {nodeOnline
+              ? "No opportunities available"
+              : "Node offline — start the node to see opportunities"}
+          </div>
+        )}
+      </section>
+
+      {/* Quick Stats */}
+      <section>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+            <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">
+              Markets Monitored
+            </p>
+            <p className="text-xl font-bold font-mono text-gray-100">
+              {totalMarkets || "—"}
+            </p>
+          </div>
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+            <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">
+              Best Spread
+            </p>
+            <p className="text-xl font-bold font-mono text-emerald-400">
+              {bestSpread > 0 ? formatPct(bestSpread) : "—"}
+            </p>
+          </div>
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+            <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">
+              Chains Tracked
+            </p>
+            <p className="text-xl font-bold font-mono text-gray-100">
+              {chainsTracked || "—"}
+            </p>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

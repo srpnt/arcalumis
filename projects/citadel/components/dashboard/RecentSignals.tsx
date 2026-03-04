@@ -33,7 +33,7 @@ export default function RecentSignals({ signals }: RecentSignalsProps) {
           Recent Signals
         </h2>
         <Link
-          href="/signals"
+          href="/risk"
           className="text-[10px] text-emerald-500 hover:text-emerald-400 transition-colors"
         >
           View all →

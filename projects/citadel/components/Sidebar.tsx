@@ -5,12 +5,10 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 const NAV_ITEMS = [
-  { href: "/", label: "Dashboard", icon: "🏠" },
-  { href: "/morpho", label: "Morpho", icon: "📊" },
-  { href: "/yield-comparison", label: "Arbitrage", icon: "⚡" },
-  { href: "/execution", label: "Execution", icon: "🏰" },
-  { href: "/exposure", label: "Exposure", icon: "🛡" },
-  { href: "/signals", label: "Signals", icon: "📡" },
+  { href: "/", label: "Command Center", icon: "🏰" },
+  { href: "/markets", label: "Markets", icon: "📊" },
+  { href: "/arbitrage", label: "Arbitrage", icon: "⚡" },
+  { href: "/risk", label: "Risk", icon: "🛡" },
   { href: "/intel", label: "Intel", icon: "🔍" },
 ];
 

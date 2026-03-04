@@ -40,7 +40,7 @@ export default function RateOpportunities({ topVaults }: RateOpportunitiesProps)
           Rate Opportunities
         </h2>
         <Link
-          href="/morpho"
+          href="/markets"
           className="text-[10px] text-emerald-500 hover:text-emerald-400 transition-colors"
         >
           View all →
