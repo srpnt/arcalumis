@@ -18,3 +18,5 @@ Thumbs.db
 projects/dashboard/.venv/
 __pycache__/
 credentials/
+projects/execution/node_modules/
+projects/execution/node/node_modules/
