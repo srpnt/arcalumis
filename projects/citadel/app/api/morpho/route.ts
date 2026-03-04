@@ -3,8 +3,7 @@
 // ============================================================
 
 import { NextRequest, NextResponse } from "next/server";
-
-const MORPHO_API = process.env.MORPHO_API_URL || "https://api.morpho.org/graphql";
+import { MORPHO_API } from "@/lib/morpho-api";
 
 export async function POST(request: NextRequest) {
   try {

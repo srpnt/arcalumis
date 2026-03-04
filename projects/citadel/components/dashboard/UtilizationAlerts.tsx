@@ -1,6 +1,7 @@
 "use client";
 
 import { formatPct } from "@/lib/format";
+import { getMorphoVaultUrl } from "@/lib/chains";
 
 function utilizationColor(u: number): string {
   if (u >= 0.9) return "text-red-400";
@@ -64,7 +65,7 @@ export default function UtilizationAlerts({ highUtilVaults }: UtilizationAlertsP
           {highUtilVaults.map((v, i) => (
             <a
               key={i}
-              href={`https://app.morpho.org/vault?vault=${v.address}&network=${v.chainId === 8453 ? "base" : "mainnet"}`}
+              href={getMorphoVaultUrl(v.address, v.chainId)}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 py-1.5 px-2 rounded hover:bg-gray-800/60 transition-colors group"

@@ -2,7 +2,7 @@
 
 import { useState, useMemo, Fragment } from "react";
 import type { ArbitrageOpportunity, AssetChainData } from "@/lib/types";
-import { getMorphoMarketUrl } from "@/lib/types";
+import { getMorphoMarketUrl } from "@/lib/chains";
 import { formatUsd, formatPct } from "@/lib/format";
 import SpreadBadge from "./SpreadBadge";
 import RiskBadge from "./RiskBadge";

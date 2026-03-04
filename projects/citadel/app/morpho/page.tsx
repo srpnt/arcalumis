@@ -11,62 +11,14 @@ import ChainBadge from "@/components/ChainBadge";
 import DataTable from "@/components/DataTable";
 import HotVaultCard from "@/components/morpho/HotVaultCard";
 import { VaultBarTooltip, ScatterTooltipContent } from "@/components/morpho/ChartTooltips";
-import { MorphoVault, CHAIN_NAMES, MORPHO_NETWORK_SLUGS } from "@/lib/types";
+import type { MorphoVault } from "@/lib/types";
+import { CHAIN_NAMES, ALL_MORPHO_CHAIN_IDS, chainColor, getMorphoVaultUrl } from "@/lib/chains";
+import { VAULTS_QUERY } from "@/lib/morpho-api";
 import { formatUsd, formatPct } from "@/lib/format";
-
-// ============================================================
-// Constants
-// ============================================================
-
-const ALL_CHAINS = [1, 8453, 42161, 10, 137, 130, 480, 57073, 999, 747474, 143, 988, 98866, 25];
-
-/** Color palette for chains — first two match the original Ethereum/Base colors */
-const CHAIN_COLORS: Record<number, string> = {
-  1: "#6366f1",       // Ethereum — indigo
-  8453: "#3b82f6",    // Base — blue
-  42161: "#f59e0b",   // Arbitrum — amber
-  10: "#ef4444",      // Optimism — red
-  137: "#a855f7",     // Polygon — purple
-  130: "#ec4899",     // Unichain — pink
-  480: "#06b6d4",     // World Chain — cyan
-  57073: "#f97316",   // Ink — orange
-  999: "#22d3ee",     // HyperEVM — cyan-400
-  747474: "#14b8a6",  // Katana — teal
-  143: "#facc15",     // Monad — yellow
-  988: "#84cc16",     // Stable — lime
-  98866: "#d946ef",   // Plume — fuchsia
-  25: "#fb923c",      // Cronos — orange-400
-};
-
-function chainColor(chainId: number): string {
-  return CHAIN_COLORS[chainId] || "#6b7280";
-}
 
 // ============================================================
 // Query & Fetcher
 // ============================================================
-
-const VAULTS_QUERY = `
-query TopVaults($first: Int!, $chains: [Int!]!) {
-  vaults(
-    first: $first
-    orderBy: TotalAssetsUsd
-    orderDirection: Desc
-    where: { chainId_in: $chains, listed: true }
-  ) {
-    items {
-      address symbol name
-      chain { id network }
-      asset { symbol priceUsd }
-      state {
-        totalAssetsUsd fee apy netApy
-        allocation { market { uniqueKey loanAsset { symbol } collateralAsset { symbol } } supplyAssetsUsd }
-      }
-      metadata { description }
-    }
-  }
-}
-`;
 
 function sf(val: unknown): number {
   if (val === null || val === undefined) return 0;
@@ -78,7 +30,7 @@ async function fetchVaultsClient(): Promise<MorphoVault[]> {
   const res = await fetch("/api/morpho", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query: VAULTS_QUERY, variables: { first: 200, chains: ALL_CHAINS } }),
+    body: JSON.stringify({ query: VAULTS_QUERY, variables: { first: 200, chains: [...ALL_MORPHO_CHAIN_IDS] } }),
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const json = await res.json();
@@ -154,8 +106,7 @@ export default function MorphoPage() {
   const hotVaults = filtered.filter((v) => v.netApy > hotThreshold).sort((a, b) => b.netApy - a.netApy);
 
   const vaultUrl = (v: MorphoVault) => {
-    const slug = MORPHO_NETWORK_SLUGS[v.chainId] || "ethereum";
-    return `https://app.morpho.org/vault?vault=${v.address}&network=${slug}`;
+    return getMorphoVaultUrl(v.address, v.chainId);
   };
 
   const barData = useMemo(() => [...filtered]

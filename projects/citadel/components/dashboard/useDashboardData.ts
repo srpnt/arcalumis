@@ -92,37 +92,8 @@ export interface StablecoinData {
 // Constants & Helpers
 // ============================================================
 
-const CHAIN_NAMES: Record<number, string> = { 1: "Ethereum", 8453: "Base" };
-
-const MORPHO_VAULTS_QUERY = `
-query TopVaults {
-  vaults(
-    first: 50
-    orderBy: TotalAssetsUsd
-    orderDirection: Desc
-    where: { chainId_in: [1, 8453], listed: true }
-  ) {
-    items {
-      address name symbol
-      chain { id network }
-      asset { symbol priceUsd }
-      state {
-        totalAssetsUsd fee apy netApy
-        allocation {
-          market {
-            uniqueKey
-            loanAsset { symbol }
-            collateralAsset { symbol }
-            state { utilization borrowAssetsUsd supplyAssetsUsd }
-          }
-          supplyAssetsUsd
-        }
-      }
-      metadata { description }
-    }
-  }
-}
-`;
+import { CHAIN_NAMES, ALL_MORPHO_CHAIN_IDS } from "@/lib/chains";
+import { VAULTS_QUERY } from "@/lib/morpho-api";
 
 const jsonFetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -140,7 +111,7 @@ async function morphoFetcher(): Promise<MorphoDashData> {
   const res = await fetch("/api/morpho", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query: MORPHO_VAULTS_QUERY }),
+    body: JSON.stringify({ query: VAULTS_QUERY, variables: { first: 200, chains: [...ALL_MORPHO_CHAIN_IDS] } }),
   });
   const json = await res.json();
   const items: RawVaultItem[] = json.data?.vaults?.items || [];

@@ -4,8 +4,8 @@
 // ============================================================
 
 import { NextResponse } from "next/server";
-
-const MORPHO_API = process.env.MORPHO_API_URL || "https://api.morpho.org/graphql";
+import { MORPHO_API } from "@/lib/morpho-api";
+import { CHAIN_NAMES } from "@/lib/chains";
 
 const MARKETS_QUERY = `
 query CollateralExposure {
@@ -67,9 +67,7 @@ function classifyTier(symbol: string): { tier: number; label: string; emoji: str
 }
 
 function chainName(id: number): string {
-  if (id === 1) return "Ethereum";
-  if (id === 8453) return "Base";
-  return `Chain ${id}`;
+  return CHAIN_NAMES[id] || `Chain ${id}`;
 }
 
 interface RawMarketItem {

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { formatUsd, formatPct } from "@/lib/format";
+import { getMorphoVaultUrl } from "@/lib/chains";
 import { useDashboardData } from "@/components/dashboard/useDashboardData";
 import DashboardMetricCard from "@/components/dashboard/DashboardMetricCard";
 import UtilizationAlerts from "@/components/dashboard/UtilizationAlerts";
@@ -90,7 +91,7 @@ export default function Home() {
   const highConcCount = concentrations.length;
 
   const morphoVaultUrl = bestVaultAddress
-    ? `https://app.morpho.org/vault?vault=${bestVaultAddress}&network=${bestVaultChainId === 8453 ? "base" : "mainnet"}`
+    ? getMorphoVaultUrl(bestVaultAddress, bestVaultChainId)
     : "/morpho";
 
   const gasGwei = gasData?.proposeGwei ?? 0;

@@ -18,6 +18,7 @@ import RiskTierBadge from "@/components/RiskTierBadge";
 import TreemapContent from "@/components/exposure/TreemapContent";
 import { TreemapTooltip, DonutTooltip } from "@/components/exposure/ChartTooltips";
 import { formatUsd, formatPct, formatAddress } from "@/lib/format";
+import { getMorphoMarketUrl } from "@/lib/chains";
 
 // --- Types matching the API response ---
 
@@ -87,13 +88,6 @@ const TIER_NAMES: Record<number, string> = {
   3: "Tier 3 — Emerging",
   4: "Tier 4 — Exotic",
 };
-
-// --- Market URL builder ---
-
-function morphoMarketUrl(uniqueKey: string, chainId: number): string {
-  const network = chainId === 8453 ? "base" : "mainnet";
-  return `https://app.morpho.org/market?id=${uniqueKey}&network=${network}`;
-}
 
 // --- Page Component ---
 
@@ -298,7 +292,7 @@ export default function ExposurePage() {
                     </td>
                     <td className="px-3 py-2">
                       <a
-                        href={morphoMarketUrl(m.uniqueKey, m.chainId)}
+                        href={getMorphoMarketUrl(m.uniqueKey, m.chainId) || "#"}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-emerald-400 hover:text-emerald-300"

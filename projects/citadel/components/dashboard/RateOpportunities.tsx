@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { formatPct } from "@/lib/format";
+import { getMorphoVaultUrl } from "@/lib/chains";
 
 interface TopVault {
   name: string;
@@ -54,7 +55,7 @@ export default function RateOpportunities({ topVaults }: RateOpportunitiesProps)
           {topVaults.map((v, i) => (
             <a
               key={i}
-              href={`https://app.morpho.org/vault?vault=${v.address}&network=${v.chainId === 8453 ? "base" : "mainnet"}`}
+              href={getMorphoVaultUrl(v.address, v.chainId)}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 py-1.5 px-2 rounded hover:bg-gray-800/60 transition-colors group"

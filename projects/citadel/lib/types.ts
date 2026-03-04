@@ -196,44 +196,5 @@ export interface ArbitrageData {
 
 export type ChainFilter = "all" | string;
 
-export const CHAIN_NAMES: Record<number, string> = {
-  1: "Ethereum",
-  8453: "Base",
-  42161: "Arbitrum",
-  10: "Optimism",
-  137: "Polygon",
-  130: "Unichain",
-  480: "World Chain",
-  57073: "Ink",
-  999: "HyperEVM",
-  747474: "Katana",
-  143: "Monad",
-  988: "Stable",
-  98866: "Plume",
-  25: "Cronos",
-};
-
-/** Morpho frontend network slugs by chain ID */
-export const MORPHO_NETWORK_SLUGS: Record<number, string> = {
-  1: "ethereum",
-  8453: "base",
-  42161: "arbitrum",
-  10: "optimism",
-  137: "polygon",
-  130: "unichain",
-  480: "worldchain",
-  57073: "ink",
-  999: "hyperevm",
-  747474: "katana",
-  143: "monad",
-  25: "cronos",
-  988: "stable",
-  98866: "plume",
-};
-
-/** Build a Morpho frontend market URL */
-export function getMorphoMarketUrl(uniqueKey: string, chainId: number): string | null {
-  const slug = MORPHO_NETWORK_SLUGS[chainId];
-  if (!slug || !uniqueKey) return null;
-  return `https://app.morpho.org/market?id=${uniqueKey}&network=${slug}`;
-}
+// Chain constants (CHAIN_NAMES, MORPHO_NETWORK_SLUGS, getMorphoMarketUrl, etc.)
+// have moved to lib/chains.ts — import from there.

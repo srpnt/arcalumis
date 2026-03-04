@@ -3,6 +3,7 @@
 import { formatUsd } from "@/lib/format";
 import { CHAIN_NAMES, CHAIN_COLORS } from "./constants";
 import { getEtherscanUrl, formatAddress } from "./helpers";
+import { getMorphoVaultUrl } from "@/lib/chains";
 import type { VaultConcentrationEntry } from "./types";
 
 interface VaultConcentrationTableProps {
@@ -101,7 +102,7 @@ export default function VaultConcentrationTable({ entries, loading, error }: Vau
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-2">
                         <a
-                          href={`https://app.morpho.org/vault?vault=${e.vaultAddress}&network=${e.chainId === 8453 ? "base" : "mainnet"}`}
+                          href={getMorphoVaultUrl(e.vaultAddress, e.chainId)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-xs text-gray-300 hover:text-emerald-400 transition-colors"

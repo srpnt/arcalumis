@@ -1,7 +1,7 @@
 "use client";
 
 import type { AssetChainData } from "@/lib/types";
-import { getMorphoMarketUrl } from "@/lib/types";
+import { getMorphoMarketUrl } from "@/lib/chains";
 import { formatUsd, formatPct } from "@/lib/format";
 import {
   BarChart,

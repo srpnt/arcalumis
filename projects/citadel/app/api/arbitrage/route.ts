@@ -10,8 +10,8 @@ import type {
   AssetChainData,
   ArbitrageData,
 } from "@/lib/types";
-
-const MORPHO_API = process.env.MORPHO_API_URL || "https://api.morpho.org/graphql";
+import { MORPHO_API } from "@/lib/morpho-api";
+import { CHAIN_NAMES } from "@/lib/chains";
 
 const MARKETS_QUERY = `
 query AllMarkets($first: Int!, $skip: Int!) {
@@ -48,21 +48,15 @@ query AllMarkets($first: Int!, $skip: Int!) {
 }
 `;
 
-// Chain ID → human-readable name
+// Extended chain names for arbitrage (includes chains not in our main set)
 const CHAIN_ID_NAME: Record<number, string> = {
-  1: "Ethereum",
-  10: "Optimism",
+  ...CHAIN_NAMES,
   56: "BNB Chain",
   100: "Gnosis",
-  130: "Unichain",
-  137: "Polygon",
   146: "Sonic",
-  480: "Worldchain",
   690: "Redstone",
   1135: "Lisk",
   5000: "Mantle",
-  8453: "Base",
-  42161: "Arbitrum",
   42220: "Celo",
   43114: "Avalanche",
   80084: "Berachain",
