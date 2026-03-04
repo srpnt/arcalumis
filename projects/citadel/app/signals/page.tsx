@@ -30,7 +30,7 @@ export default function SignalsPage() {
     isLoading,
   } = useSWR("signals", fetchSignals, {
     revalidateOnFocus: false,
-    refreshInterval: 600_000,
+    refreshInterval: 43_200_000, // 12 hours
   });
 
   const allSignals = signals || [];

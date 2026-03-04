@@ -107,6 +107,61 @@ export interface ArkhamTransfer {
   txHash: string;
 }
 
+// --- Cross-Chain Arbitrage ---
+
+export interface ArbitrageOpportunity {
+  asset: string;
+  grossSpread: number;
+  supplyChain: string;
+  supplyChainId: number;
+  supplyApy: number;
+  supplyApyRaw: number;
+  supplyCollateral: string;
+  supplyTvl: number;
+  borrowChain: string;
+  borrowChainId: number;
+  borrowApy: number;
+  effectiveBorrowApy: number;
+  borrowCollateral: string;
+  borrowTvl: number;
+  rewardTokens: string[];
+}
+
+export interface ChainSummary {
+  chain: string;
+  chainId: number;
+  totalSupplyTvl: number;
+  totalBorrowTvl: number;
+  marketCount: number;
+  bestSupplyApy: number;
+  lowestBorrowApy: number;
+  assets: string[];
+}
+
+export interface AssetChainData {
+  chain: string;
+  chainId: number;
+  bestSupplyApy: number;
+  bestSupplyApyRaw: number;
+  lowestBorrowApy: number;
+  effectiveBorrowApy: number;
+  supplyTvl: number;
+  borrowTvl: number;
+  marketCount: number;
+  rewardTokens: string[];
+}
+
+export interface ArbitrageData {
+  timestamp: number;
+  totalOpportunities: number;
+  bestSpread: number;
+  chainsMonitored: number;
+  crossChainTvl: number;
+  opportunities: ArbitrageOpportunity[];
+  chainSummaries: ChainSummary[];
+  assetBreakdowns: Record<string, AssetChainData[]>;
+}
+
 // --- Shared ---
 
 export type ChainFilter = "all" | "ethereum" | "base";
