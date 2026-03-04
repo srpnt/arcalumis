@@ -19,7 +19,7 @@ export async function GET(
   try {
     const res = await fetch(url, {
       headers: { Accept: "application/json" },
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(120000),
     });
 
     const data = await res.json();
