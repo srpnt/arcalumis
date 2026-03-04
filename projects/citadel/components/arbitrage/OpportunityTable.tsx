@@ -5,11 +5,14 @@ import type { ArbitrageOpportunity, AssetChainData } from "@/lib/types";
 import { getMorphoMarketUrl } from "@/lib/types";
 import { formatUsd, formatPct } from "@/lib/format";
 import SpreadBadge from "./SpreadBadge";
+import RiskBadge from "./RiskBadge";
+import RiskBreakdown from "./RiskBreakdown";
 import AssetChainBreakdown from "./AssetChainBreakdown";
 
 type SortKey =
   | "spread"
   | "asset"
+  | "risk"
   | "supplyApy"
   | "borrowApy"
   | "supplyTvl"
@@ -54,6 +57,7 @@ export default function OpportunityTable({
   const [sortAsc, setSortAsc] = useState(false);
   const [minSpread, setMinSpread] = useState(0.5);
   const [minTvl, setMinTvl] = useState(0);
+  const [minRiskScore, setMinRiskScore] = useState(0);
   const [assetFilter, setAssetFilter] = useState("all");
   const [hideNegBorrow, setHideNegBorrow] = useState(false);
   const [expandedAsset, setExpandedAsset] = useState<string | null>(null);
@@ -71,6 +75,7 @@ export default function OpportunityTable({
         o.grossSpread * 100 >= minSpread &&
         o.supplyTvl >= minTvl &&
         o.borrowTvl >= minTvl &&
+        o.risk.score >= minRiskScore &&
         (assetFilter === "all" || o.asset === assetFilter) &&
         (!hideNegBorrow || o.effectiveBorrowApy >= 0)
     );
@@ -83,6 +88,9 @@ export default function OpportunityTable({
           break;
         case "asset":
           diff = a.asset.localeCompare(b.asset);
+          break;
+        case "risk":
+          diff = a.risk.score - b.risk.score;
           break;
         case "supplyApy":
           diff = a.supplyApy - b.supplyApy;
@@ -101,7 +109,7 @@ export default function OpportunityTable({
     });
 
     return list;
-  }, [opportunities, minSpread, minTvl, assetFilter, hideNegBorrow, sortKey, sortAsc]);
+  }, [opportunities, minSpread, minTvl, minRiskScore, assetFilter, hideNegBorrow, sortKey, sortAsc]);
 
   function handleSort(key: SortKey) {
     if (sortKey === key) {
@@ -151,6 +159,20 @@ export default function OpportunityTable({
             <option value={100_000}>$100K</option>
             <option value={1_000_000}>$1M</option>
             <option value={10_000_000}>$10M</option>
+          </select>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <label className="text-xs text-gray-500">Min Risk:</label>
+          <select
+            value={minRiskScore}
+            onChange={(e) => setMinRiskScore(Number(e.target.value))}
+            className="bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5 text-xs text-gray-300"
+          >
+            <option value={0}>All</option>
+            <option value={3}>≥ 3 (Any)</option>
+            <option value={5}>≥ 5 (Medium+)</option>
+            <option value={8}>≥ 8 (Low Risk)</option>
           </select>
         </div>
 
@@ -206,6 +228,12 @@ export default function OpportunityTable({
                 onClick={() => handleSort("spread")}
               >
                 Spread {sortIcon("spread")}
+              </th>
+              <th
+                className="px-3 py-2.5 text-center text-xs font-medium text-gray-500 uppercase cursor-pointer hover:text-gray-300"
+                onClick={() => handleSort("risk")}
+              >
+                Risk {sortIcon("risk")}
               </th>
               <th
                 className="px-3 py-2.5 text-right text-xs font-medium text-gray-500 uppercase cursor-pointer hover:text-gray-300"
@@ -267,6 +295,9 @@ export default function OpportunityTable({
                     <td className="px-3 py-2.5 text-right">
                       <SpreadBadge spread={opp.grossSpread} />
                     </td>
+                    <td className="px-3 py-2.5 text-center">
+                      <RiskBadge risk={opp.risk} />
+                    </td>
                     <td className="px-3 py-2.5 text-right">
                       <div className="text-emerald-400 font-mono text-xs">
                         {formatPct(opp.supplyApy)}
@@ -314,7 +345,8 @@ export default function OpportunityTable({
                   </tr>
                   {isExpanded && breakdown && (
                     <tr>
-                      <td colSpan={9} className="px-3 py-3 bg-gray-900/80">
+                      <td colSpan={10} className="px-3 py-3 bg-gray-900/80">
+                        <RiskBreakdown risk={opp.risk} />
                         <AssetChainBreakdown
                           asset={opp.asset}
                           chains={breakdown}
@@ -328,7 +360,7 @@ export default function OpportunityTable({
             {filtered.length === 0 && (
               <tr>
                 <td
-                  colSpan={9}
+                  colSpan={10}
                   className="px-4 py-8 text-center text-gray-500"
                 >
                   No opportunities match current filters

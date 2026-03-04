@@ -107,6 +107,31 @@ export interface ArkhamTransfer {
   txHash: string;
 }
 
+// --- Risk Assessment ---
+
+export interface RiskAssessment {
+  // Collateral quality (supply side)
+  collateralTier: number; // 1-4
+  collateralTierLabel: string; // "Blue Chip", "Established", "Emerging", "Exotic"
+
+  // Utilization risk (supply side — high util = can't withdraw)
+  utilization: number; // 0-1
+  liquidityUsd: number; // available liquidity in USD
+
+  // Spread composition
+  organicSpread: number; // rawSupplyApy - rawBorrowApy (no rewards)
+  rewardSpread: number; // totalSpread - organicSpread
+  rewardDependencyPct: number; // rewardSpread / totalSpread (0-1)
+
+  // Market maturity (supply side)
+  marketAgeSeconds: number;
+  marketAgeDays: number;
+
+  // Overall composite score (1-10, 10 = safest)
+  score: number;
+  scoreLabel: string; // "Low Risk", "Medium Risk", "High Risk"
+}
+
 // --- Cross-Chain Arbitrage ---
 
 export interface ArbitrageOpportunity {
@@ -127,6 +152,7 @@ export interface ArbitrageOpportunity {
   borrowTvl: number;
   borrowMarketId: string;
   rewardTokens: string[];
+  risk: RiskAssessment;
 }
 
 export interface ChainSummary {

@@ -5,6 +5,7 @@
 import { NextResponse } from "next/server";
 import type {
   ArbitrageOpportunity,
+  RiskAssessment,
   ChainSummary,
   AssetChainData,
   ArbitrageData,
@@ -24,6 +25,7 @@ query AllMarkets($first: Int!, $skip: Int!) {
     items {
       uniqueKey
       lltv
+      creationTimestamp
       loanAsset { symbol address }
       collateralAsset { symbol address }
       morphoBlue { chain { id network } }
@@ -75,6 +77,75 @@ function sf(val: unknown): number {
   return isNaN(n) ? 0 : n;
 }
 
+// --- Collateral Tier Classification ---
+
+const TIER_1_SYMBOLS = new Set([
+  "WETH", "wETH", "ETH", "WBTC", "wBTC", "BTC", "stETH", "wstETH", "cbETH", "rETH", "cbBTC",
+]);
+const TIER_2_SYMBOLS = new Set([
+  "USDC", "USDT", "DAI", "FRAX", "USDS", "sDAI", "PYUSD", "USDC.e",
+]);
+const TIER_3_SYMBOLS = new Set([
+  "ezETH", "weETH", "rsETH", "USDe", "sUSDe", "osETH", "mETH", "swETH",
+  "USDA", "eETH", "pufETH", "ETHx", "OETH", "woETH", "sFRAX", "sfrxETH", "frxETH", "apxETH",
+]);
+
+const TIER_LABELS: Record<number, string> = {
+  1: "Blue Chip",
+  2: "Established",
+  3: "Emerging",
+  4: "Exotic",
+};
+
+function getCollateralTier(symbol: string): number {
+  if (TIER_1_SYMBOLS.has(symbol)) return 1;
+  if (TIER_2_SYMBOLS.has(symbol)) return 2;
+  if (TIER_3_SYMBOLS.has(symbol)) return 3;
+  return 4;
+}
+
+// --- Risk Score Computation ---
+
+function computeRiskScore(
+  collateralTier: number,
+  utilization: number,
+  rewardDependencyPct: number,
+  marketAgeDays: number,
+): { score: number; scoreLabel: string } {
+  // Collateral tier: Tier 1 = 3pts, Tier 2 = 2.5pts, Tier 3 = 1.5pts, Tier 4 = 0pts
+  let collateralPts = 0;
+  if (collateralTier === 1) collateralPts = 3;
+  else if (collateralTier === 2) collateralPts = 2.5;
+  else if (collateralTier === 3) collateralPts = 1.5;
+
+  // Utilization: <70% = 2pts, 70-85% = 1.5pts, 85-95% = 0.5pts, >95% = 0pts
+  let utilizationPts = 0;
+  if (utilization < 0.70) utilizationPts = 2;
+  else if (utilization < 0.85) utilizationPts = 1.5;
+  else if (utilization < 0.95) utilizationPts = 0.5;
+
+  // Reward dependency: <30% = 3pts, 30-60% = 2pts, 60-90% = 1pt, >90% = 0pts
+  let rewardPts = 0;
+  if (rewardDependencyPct < 0.30) rewardPts = 3;
+  else if (rewardDependencyPct < 0.60) rewardPts = 2;
+  else if (rewardDependencyPct < 0.90) rewardPts = 1;
+
+  // Market age: >180 days = 2pts, 90-180 = 1.5pts, 30-90 = 0.5pts, <30 = 0pts
+  let agePts = 0;
+  if (marketAgeDays > 180) agePts = 2;
+  else if (marketAgeDays > 90) agePts = 1.5;
+  else if (marketAgeDays > 30) agePts = 0.5;
+
+  const score = Math.min(10, collateralPts + utilizationPts + rewardPts + agePts);
+
+  let scoreLabel: string;
+  if (score >= 8) scoreLabel = "Low Risk";
+  else if (score >= 5) scoreLabel = "Medium Risk";
+  else scoreLabel = "High Risk";
+
+  return { score, scoreLabel };
+}
+
 interface RawReward {
   asset?: { symbol?: string };
   supplyApr?: number | string | null;
@@ -84,12 +155,14 @@ interface RawReward {
 interface RawMarket {
   uniqueKey?: string;
   lltv?: number | string | null;
+  creationTimestamp?: number | string | null;
   loanAsset?: { symbol?: string; address?: string };
   collateralAsset?: { symbol?: string; address?: string };
   morphoBlue?: { chain?: { id?: number; network?: string } };
   state?: {
     supplyAssetsUsd?: number | string | null;
     borrowAssetsUsd?: number | string | null;
+    liquidityAssetsUsd?: number | string | null;
     supplyApy?: number | string | null;
     borrowApy?: number | string | null;
     fee?: number | string | null;
@@ -126,6 +199,11 @@ interface ProcessedMarket {
   supplyApyWithRewards: number;
   effectiveBorrowApy: number;
   rewardSymbols: string[];
+  // Risk-related fields
+  utilization: number;
+  liquidityUsd: number;
+  creationTimestamp: number;
+  collateralTier: number;
 }
 
 export async function GET() {
@@ -166,12 +244,18 @@ export async function GET() {
       allChainIds.add(chainId);
 
       const symbol = loan.symbol || "?";
+      const collSymbol = coll.symbol || "—";
+      const utilization = sf(state.utilization);
+      const liquidityUsd = sf(state.liquidityAssetsUsd);
+      const creationTimestamp = sf(m.creationTimestamp);
+      const collateralTier = getCollateralTier(collSymbol);
+
       const existing = byAsset.get(symbol) || [];
       existing.push({
         uniqueKey: m.uniqueKey || "",
         chain: chainName,
         chainId,
-        collateral: coll.symbol || "—",
+        collateral: collSymbol,
         supplyUsd,
         borrowUsd,
         supplyApy,
@@ -181,6 +265,10 @@ export async function GET() {
         rewardSymbols: rewards
           .filter((r) => sf(r.supplyApr) > 0 || sf(r.borrowApr) > 0)
           .map((r) => r.asset?.symbol || "?"),
+        utilization,
+        liquidityUsd,
+        creationTimestamp,
+        collateralTier,
       });
       byAsset.set(symbol, existing);
     }
@@ -326,6 +414,38 @@ export async function GET() {
           if (s.chain === b.chain) continue;
           const grossSpread = s.supplyApyWithRewards - b.effectiveBorrowApy;
           if (grossSpread > 0.005) {
+            // Compute risk assessment for supply side
+            const organicSpread = s.supplyApy - b.borrowApy;
+            const rewardSpread = grossSpread - organicSpread;
+            const rewardDependencyPct = grossSpread > 0 ? Math.max(0, rewardSpread / grossSpread) : 0;
+
+            const nowSeconds = Math.floor(Date.now() / 1000);
+            const marketAgeSeconds = s.creationTimestamp > 0
+              ? nowSeconds - s.creationTimestamp
+              : 0;
+            const marketAgeDays = Math.floor(marketAgeSeconds / 86400);
+
+            const { score, scoreLabel } = computeRiskScore(
+              s.collateralTier,
+              s.utilization,
+              rewardDependencyPct,
+              marketAgeDays,
+            );
+
+            const risk: RiskAssessment = {
+              collateralTier: s.collateralTier,
+              collateralTierLabel: TIER_LABELS[s.collateralTier] || "Exotic",
+              utilization: s.utilization,
+              liquidityUsd: s.liquidityUsd,
+              organicSpread,
+              rewardSpread: Math.max(0, rewardSpread),
+              rewardDependencyPct: Math.max(0, Math.min(1, rewardDependencyPct)),
+              marketAgeSeconds,
+              marketAgeDays,
+              score,
+              scoreLabel,
+            };
+
             opportunities.push({
               asset,
               grossSpread,
@@ -344,6 +464,7 @@ export async function GET() {
               borrowTvl: b.borrowUsd,
               borrowMarketId: b.uniqueKey,
               rewardTokens: s.rewardSymbols,
+              risk,
             });
           }
         }
