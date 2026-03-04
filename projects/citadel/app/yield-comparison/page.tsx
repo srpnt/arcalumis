@@ -91,11 +91,7 @@ export default function ArbitragePage() {
               subtitle="monitored"
               icon="🌐"
             />
-            <MetricCard
-              label="Cross-Chain TVL"
-              value={formatUsd(data.crossChainTvl)}
-              icon="🏦"
-            />
+
           </div>
 
           {/* Main Opportunity Table */}

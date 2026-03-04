@@ -112,35 +112,37 @@ function computeRiskScore(
   rewardDependencyPct: number,
   marketAgeDays: number,
 ): { score: number; scoreLabel: string } {
-  // Collateral tier: Tier 1 = 3pts, Tier 2 = 2.5pts, Tier 3 = 1.5pts, Tier 4 = 0pts
-  let collateralPts = 0;
-  if (collateralTier === 1) collateralPts = 3;
-  else if (collateralTier === 2) collateralPts = 2.5;
-  else if (collateralTier === 3) collateralPts = 1.5;
+  // Scale: 1 = low risk, 10 = high risk. Higher = more dangerous.
 
-  // Utilization: <70% = 2pts, 70-85% = 1.5pts, 85-95% = 0.5pts, >95% = 0pts
-  let utilizationPts = 0;
-  if (utilization < 0.70) utilizationPts = 2;
-  else if (utilization < 0.85) utilizationPts = 1.5;
-  else if (utilization < 0.95) utilizationPts = 0.5;
+  // Collateral tier: Tier 4 (Exotic) = 3pts risk, Tier 1 (Blue Chip) = 0pts risk
+  let collateralRisk = 0;
+  if (collateralTier === 4) collateralRisk = 3;
+  else if (collateralTier === 3) collateralRisk = 1.5;
+  else if (collateralTier === 2) collateralRisk = 0.5;
 
-  // Reward dependency: <30% = 3pts, 30-60% = 2pts, 60-90% = 1pt, >90% = 0pts
-  let rewardPts = 0;
-  if (rewardDependencyPct < 0.30) rewardPts = 3;
-  else if (rewardDependencyPct < 0.60) rewardPts = 2;
-  else if (rewardDependencyPct < 0.90) rewardPts = 1;
+  // Utilization: >95% = 2pts risk, <70% = 0pts risk
+  let utilizationRisk = 0;
+  if (utilization >= 0.95) utilizationRisk = 2;
+  else if (utilization >= 0.85) utilizationRisk = 1.5;
+  else if (utilization >= 0.70) utilizationRisk = 0.5;
 
-  // Market age: >180 days = 2pts, 90-180 = 1.5pts, 30-90 = 0.5pts, <30 = 0pts
-  let agePts = 0;
-  if (marketAgeDays > 180) agePts = 2;
-  else if (marketAgeDays > 90) agePts = 1.5;
-  else if (marketAgeDays > 30) agePts = 0.5;
+  // Reward dependency: >90% reward-dependent = 3pts risk, <30% = 0pts risk
+  let rewardRisk = 0;
+  if (rewardDependencyPct >= 0.90) rewardRisk = 3;
+  else if (rewardDependencyPct >= 0.60) rewardRisk = 2;
+  else if (rewardDependencyPct >= 0.30) rewardRisk = 1;
 
-  const score = Math.min(10, collateralPts + utilizationPts + rewardPts + agePts);
+  // Market age: <30 days = 2pts risk, >180 days = 0pts risk
+  let ageRisk = 0;
+  if (marketAgeDays < 30) ageRisk = 2;
+  else if (marketAgeDays < 90) ageRisk = 1.5;
+  else if (marketAgeDays < 180) ageRisk = 0.5;
+
+  const score = Math.max(1, Math.min(10, collateralRisk + utilizationRisk + rewardRisk + ageRisk));
 
   let scoreLabel: string;
-  if (score >= 8) scoreLabel = "Low Risk";
-  else if (score >= 5) scoreLabel = "Medium Risk";
+  if (score <= 3) scoreLabel = "Low Risk";
+  else if (score <= 6) scoreLabel = "Medium Risk";
   else scoreLabel = "High Risk";
 
   return { score, scoreLabel };

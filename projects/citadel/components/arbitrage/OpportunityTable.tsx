@@ -57,7 +57,7 @@ export default function OpportunityTable({
   const [sortAsc, setSortAsc] = useState(false);
   const [minSpread, setMinSpread] = useState(0.5);
   const [minTvl, setMinTvl] = useState(0);
-  const [minRiskScore, setMinRiskScore] = useState(0);
+  const [maxRiskScore, setMaxRiskScore] = useState(10);
   const [assetFilter, setAssetFilter] = useState("all");
   const [hideNegBorrow, setHideNegBorrow] = useState(false);
   const [expandedAsset, setExpandedAsset] = useState<string | null>(null);
@@ -75,7 +75,7 @@ export default function OpportunityTable({
         o.grossSpread * 100 >= minSpread &&
         o.supplyTvl >= minTvl &&
         o.borrowTvl >= minTvl &&
-        o.risk.score >= minRiskScore &&
+        (o.risk?.score ?? 1) <= maxRiskScore &&
         (assetFilter === "all" || o.asset === assetFilter) &&
         (!hideNegBorrow || o.effectiveBorrowApy >= 0)
     );
@@ -90,7 +90,7 @@ export default function OpportunityTable({
           diff = a.asset.localeCompare(b.asset);
           break;
         case "risk":
-          diff = a.risk.score - b.risk.score;
+          diff = (a.risk?.score ?? 0) - (b.risk?.score ?? 0);
           break;
         case "supplyApy":
           diff = a.supplyApy - b.supplyApy;
@@ -109,7 +109,7 @@ export default function OpportunityTable({
     });
 
     return list;
-  }, [opportunities, minSpread, minTvl, minRiskScore, assetFilter, hideNegBorrow, sortKey, sortAsc]);
+  }, [opportunities, minSpread, minTvl, maxRiskScore, assetFilter, hideNegBorrow, sortKey, sortAsc]);
 
   function handleSort(key: SortKey) {
     if (sortKey === key) {
@@ -163,16 +163,16 @@ export default function OpportunityTable({
         </div>
 
         <div className="flex items-center gap-2">
-          <label className="text-xs text-gray-500">Min Risk:</label>
+          <label className="text-xs text-gray-500">Max Risk:</label>
           <select
-            value={minRiskScore}
-            onChange={(e) => setMinRiskScore(Number(e.target.value))}
+            value={maxRiskScore}
+            onChange={(e) => setMaxRiskScore(Number(e.target.value))}
             className="bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5 text-xs text-gray-300"
           >
-            <option value={0}>All</option>
-            <option value={3}>≥ 3 (Any)</option>
-            <option value={5}>≥ 5 (Medium+)</option>
-            <option value={8}>≥ 8 (Low Risk)</option>
+            <option value={10}>All</option>
+            <option value={3}>≤ 3 (Low)</option>
+            <option value={6}>≤ 6 (Medium)</option>
+            <option value={8}>≤ 8</option>
           </select>
         </div>
 
@@ -296,7 +296,7 @@ export default function OpportunityTable({
                       <SpreadBadge spread={opp.grossSpread} />
                     </td>
                     <td className="px-3 py-2.5 text-center">
-                      <RiskBadge risk={opp.risk} />
+                      {opp.risk ? <RiskBadge risk={opp.risk} /> : <span className="text-gray-600 text-xs">—</span>}
                     </td>
                     <td className="px-3 py-2.5 text-right">
                       <div className="text-emerald-400 font-mono text-xs">
@@ -346,7 +346,7 @@ export default function OpportunityTable({
                   {isExpanded && breakdown && (
                     <tr>
                       <td colSpan={10} className="px-3 py-3 bg-gray-900/80">
-                        <RiskBreakdown risk={opp.risk} />
+                        {opp.risk && <RiskBreakdown risk={opp.risk} />}
                         <AssetChainBreakdown
                           asset={opp.asset}
                           chains={breakdown}

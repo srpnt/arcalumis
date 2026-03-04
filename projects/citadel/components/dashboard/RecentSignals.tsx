@@ -54,7 +54,7 @@ export default function RecentSignals({ signals }: RecentSignalsProps) {
                 {URGENCY_EMOJI[s.urgency] || "⚪"}
               </span>
               <span className="text-xs text-gray-300 truncate flex-1">
-                {s.title.replace(/^[🔴🟡🟢]\s*/, "")}
+                {s.title.replace(/^[\u{1F534}\u{1F7E1}\u{1F7E2}]\s*/u, "").replace(/^(Alert|Signal|Info):\s*/i, "")}
               </span>
               <span className="text-[10px] text-gray-600 shrink-0 font-mono tabular-nums">
                 {timeAgo(s.date)}

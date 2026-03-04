@@ -108,7 +108,7 @@ export default function SignalCard({ signal }: SignalCardProps) {
 
         {/* Title */}
         <h3 className="text-sm font-semibold text-gray-200 leading-snug group-hover:text-gray-100 transition-colors">
-          {signal.title}
+          {signal.title.replace(/^[\u{1F534}\u{1F7E1}\u{1F7E2}]\s*/u, "")}
         </h3>
 
         {/* Preview: first line when collapsed */}
@@ -129,8 +129,26 @@ export default function SignalCard({ signal }: SignalCardProps) {
       >
         <div ref={contentRef} className="px-5 pb-5">
           <div className="pt-3 border-t border-gray-800/50">
-            <div className="text-sm text-gray-300 leading-relaxed whitespace-pre-wrap max-h-72 overflow-y-auto pr-2 scrollbar-thin">
-              {signal.body}
+            <div className="text-sm text-gray-300 leading-relaxed max-h-72 overflow-y-auto pr-2 scrollbar-thin space-y-1">
+              {signal.body.split("\n").filter(line => !line.match(/^\|[-\s|:]+\|$/)).map((line, i) => {
+                // Convert markdown table rows to clean text
+                if (line.startsWith("|") && line.endsWith("|")) {
+                  const cells = line.split("|").filter(Boolean).map(c => c.trim());
+                  return <div key={i} className="text-xs text-gray-400 font-mono">{cells.join("  ·  ")}</div>;
+                }
+                // Bold markdown
+                const parts = line.replace(/\*\*(.*?)\*\*/g, "⟨b⟩$1⟨/b⟩").split(/⟨\/?b⟩/);
+                const isBullet = line.startsWith("- ");
+                return (
+                  <div key={i} className={isBullet ? "pl-3 text-sm" : "text-sm"}>
+                    {isBullet && <span className="text-gray-600 mr-1">•</span>}
+                    {parts.map((part, j) => j % 2 === 1
+                      ? <span key={j} className="font-semibold text-gray-200">{part}</span>
+                      : <span key={j}>{isBullet && j === 0 ? part.replace(/^- /, "") : part}</span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
