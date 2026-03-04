@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import useSWR from "swr";
 import { formatUsd, formatPct } from "@/lib/format";
 import { getMorphoVaultUrl } from "@/lib/chains";
 import { useDashboardData } from "@/components/dashboard/useDashboardData";
@@ -42,6 +43,17 @@ function gasBg(gwei: number): string {
 // Component
 // ============================================================
 
+// Node fetcher that doesn't throw on offline
+const nodeFetcher = async (url: string) => {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+};
+
 export default function Home() {
   const {
     morphoData,
@@ -53,6 +65,20 @@ export default function Home() {
     stableData,
     loading,
   } = useDashboardData();
+
+  // Execution node positions
+  const { data: nodePositions } = useSWR(
+    "/api/node/positions",
+    nodeFetcher,
+    { refreshInterval: 30_000, revalidateOnFocus: false }
+  );
+  const { data: nodeStatus } = useSWR(
+    "/api/node/status",
+    nodeFetcher,
+    { refreshInterval: 30_000, revalidateOnFocus: false }
+  );
+  const positionsCount = nodePositions?.positions?.length ?? 0;
+  const nodeOnline = !!nodeStatus;
 
   // Derived data
   const totalTvl = morphoData?.totalTvl ?? 0;
@@ -163,6 +189,39 @@ export default function Home() {
           bgClass={gasBg(gasGwei)}
           loading={!gasData}
         />
+      </div>
+
+      {/* Execution Node Card */}
+      <div className="mb-4">
+        <Link href="/execution">
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-emerald-500/30 hover:bg-gray-800/50 transition-all cursor-pointer">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="text-lg">🏰</span>
+                <div>
+                  <p className="text-sm font-medium text-gray-200">
+                    Active Positions
+                  </p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {nodeOnline
+                      ? positionsCount > 0
+                        ? `${positionsCount} open position${positionsCount !== 1 ? "s" : ""}`
+                        : "No open positions"
+                      : "Node offline"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    nodeOnline ? "bg-emerald-500 animate-pulse" : "bg-red-500"
+                  }`}
+                />
+                <span className="text-xs text-gray-600">→</span>
+              </div>
+            </div>
+          </div>
+        </Link>
       </div>
 
       {/* Row 2: Protocol Monitor (2/3) + Risk Panel (1/3) */}
