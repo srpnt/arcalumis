@@ -22,20 +22,20 @@ const ALL_CHAINS = [1, 8453, 42161, 10, 137, 130, 480, 57073, 999, 747474, 143, 
 
 /** Color palette for chains — first two match the original Ethereum/Base colors */
 const CHAIN_COLORS: Record<number, string> = {
-  1: "#10b981",       // Ethereum — emerald
+  1: "#6366f1",       // Ethereum — indigo
   8453: "#3b82f6",    // Base — blue
   42161: "#f59e0b",   // Arbitrum — amber
   10: "#ef4444",      // Optimism — red
-  137: "#8b5cf6",     // Polygon — purple
+  137: "#a855f7",     // Polygon — purple
   130: "#ec4899",     // Unichain — pink
   480: "#06b6d4",     // World Chain — cyan
   57073: "#f97316",   // Ink — orange
-  999: "#a855f7",     // HyperEVM — violet
+  999: "#22d3ee",     // HyperEVM — cyan-400
   747474: "#14b8a6",  // Katana — teal
-  143: "#6366f1",     // Monad — indigo
+  143: "#facc15",     // Monad — yellow
   988: "#84cc16",     // Stable — lime
   98866: "#d946ef",   // Plume — fuchsia
-  25: "#0ea5e9",      // Cronos — sky
+  25: "#fb923c",      // Cronos — orange-400
 };
 
 function chainColor(chainId: number): string {
