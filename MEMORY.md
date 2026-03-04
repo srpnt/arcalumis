@@ -66,6 +66,18 @@ A citadel-type product: automated identification of on-chain opportunities + cap
 - Token stored in ~/.git-credentials (chmod 600)
 - Git identity: Arcalumis <arcalumis@srpnt.github.io>
 
+## Execution Infrastructure
+- **Smart Account:** `0x21143020252B895c97f0adDCeC6218b927c533B3` (Nexus ERC-7579, same address ETH + Base)
+- **EOA:** `0xb072735d3A64169F164A569356eCf7b15f3531Aa`
+- **RPCs:** QuickNode (ETH + Base), stored in `credentials/rpc-config.json`
+- **Modules:** K1 MEE Validator v1.1.0 + Composable Execution Module (MEE v2.2.1 suite)
+- **Node:** TypeScript, paper trade mode operational, at `projects/execution/node/`
+- **Adapters:** Morpho Blue (all operations) + Across V3 (bridge)
+- **Bridge policy:** Across primary, Stargate backup, NO LI.FI (breaks composability — Ivan confirmed from experience)
+- **Strategy:** Inventory-based primary, loan-backed for scaling. USDC as base currency.
+- **Target corridor:** EURC Ethereum↔Base (2.09% organic, $2M liquidity, risk 1/10)
+- **Key insight:** 2% lending arb is too thin vs underlying volatility. Infra is the real asset — position management first, DEX arb later.
+
 ## Lessons Learned
 - `tools.profile: "messaging"` severely limits tool access — only messaging tools exposed
 - Default exec host is "sandbox" which fails closed when sandboxing is off — set to "gateway"
