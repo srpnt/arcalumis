@@ -5,13 +5,18 @@ import { formatPct } from "@/lib/format";
 
 interface Position {
   chainId: number;
+  chain?: string;
   marketId: string;
-  collateralSymbol: string;
-  loanSymbol: string;
+  collateralAsset: string;
+  loanAsset: string;
+  collateralSymbol?: string;
+  loanSymbol?: string;
   supplyShares: string;
   borrowShares: string;
+  collateral?: string;
   supplyApy?: number;
   borrowApy?: number;
+  tvl?: number;
 }
 
 interface PositionsTableProps {
@@ -95,11 +100,11 @@ export default function PositionsTable({ positions, loading }: PositionsTablePro
                         rel="noopener noreferrer"
                         className="text-gray-200 hover:text-emerald-400 transition-colors"
                       >
-                        {pos.collateralSymbol}/{pos.loanSymbol}
+                        {pos.collateralAsset || pos.collateralSymbol}/{pos.loanAsset || pos.loanSymbol}
                       </a>
                     ) : (
                       <span className="text-gray-200">
-                        {pos.collateralSymbol}/{pos.loanSymbol}
+                        {pos.collateralAsset || pos.collateralSymbol}/{pos.loanAsset || pos.loanSymbol}
                       </span>
                     )}
                   </td>

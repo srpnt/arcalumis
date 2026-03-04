@@ -31,13 +31,18 @@ interface ChainBalance {
 
 interface Position {
   chainId: number;
+  chain?: string;
   marketId: string;
-  collateralSymbol: string;
-  loanSymbol: string;
+  collateralAsset: string;
+  loanAsset: string;
+  collateralSymbol?: string;
+  loanSymbol?: string;
   supplyShares: string;
   borrowShares: string;
+  collateral?: string;
   supplyApy?: number;
   borrowApy?: number;
+  tvl?: number;
 }
 
 interface PositionsData {
@@ -47,11 +52,11 @@ interface PositionsData {
 
 interface Opportunity {
   asset: string;
-  spreadPct: number;
+  grossSpread: number;
   supplyChain: string;
-  supplyChainId: number;
+  supplyChainId?: number;
   borrowChain: string;
-  borrowChainId: number;
+  borrowChainId?: number;
   supplyApy: number;
   borrowApy: number;
 }
@@ -202,16 +207,16 @@ export default function ExecutionPage() {
                     {opp.asset}
                   </span>
                   <span className="text-xs font-mono text-emerald-400">
-                    +{opp.spreadPct.toFixed(2)}%
+                    +{((opp.grossSpread || 0) * 100).toFixed(2)}%
                   </span>
                 </div>
                 <div className="text-[11px] text-gray-500">
                   <span className="text-gray-400">
-                    {CHAIN_NAMES[opp.supplyChainId] || opp.supplyChain}
+                    {opp.supplyChainId ? (CHAIN_NAMES[opp.supplyChainId] || opp.supplyChain) : opp.supplyChain}
                   </span>
                   <span className="mx-1">→</span>
                   <span className="text-gray-400">
-                    {CHAIN_NAMES[opp.borrowChainId] || opp.borrowChain}
+                    {opp.borrowChainId ? (CHAIN_NAMES[opp.borrowChainId] || opp.borrowChain) : opp.borrowChain}
                   </span>
                 </div>
                 <div className="flex justify-between mt-2 text-[10px] text-gray-600">
