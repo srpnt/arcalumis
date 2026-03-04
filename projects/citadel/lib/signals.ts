@@ -6,10 +6,11 @@ import { Signal, SignalUrgency } from "./types";
 import fs from "fs";
 import path from "path";
 
-const RESEARCH_DIR = path.join(
+const WORKSPACE_DIR = process.env.WORKSPACE_DIR || path.join(
   process.env.HOME || "/home/piton",
-  ".openclaw/workspace/research"
+  ".openclaw/workspace"
 );
+const RESEARCH_DIR = path.join(WORKSPACE_DIR, "research");
 
 function parseSignals(content: string, sourceName: string): Signal[] {
   const signals: Signal[] = [];

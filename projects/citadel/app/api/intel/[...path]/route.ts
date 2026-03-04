@@ -7,16 +7,28 @@ import fs from "fs";
 import path from "path";
 
 function getArkhamConfig(): { baseUrl: string; apiKey: string } {
+  // Prefer env vars; fall back to credentials file
+  const envKey = process.env.ARKHAM_API_KEY || "";
+  const envBase = process.env.ARKHAM_BASE_URL || "";
+
+  if (envKey) {
+    return {
+      baseUrl: envBase || "https://api.arkm.com",
+      apiKey: envKey,
+    };
+  }
+
   try {
-    const credPath = path.join(
+    const workspaceDir = process.env.WORKSPACE_DIR || path.join(
       process.env.HOME || "/home/piton",
-      ".openclaw/credentials/apis.json"
+      ".openclaw/workspace"
     );
+    const credPath = path.join(workspaceDir, "credentials/apis.json");
     const raw = fs.readFileSync(credPath, "utf-8");
     const creds = JSON.parse(raw);
     return {
-      baseUrl: creds.arkham?.baseUrl || "https://api.arkm.com",
-      apiKey: creds.arkham?.apiKey || "",
+      baseUrl: creds.arkham?.base_url || creds.arkham?.baseUrl || "https://api.arkm.com",
+      apiKey: creds.arkham?.api_key || creds.arkham?.apiKey || "",
     };
   } catch {
     return { baseUrl: "https://api.arkm.com", apiKey: "" };

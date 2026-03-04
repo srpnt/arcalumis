@@ -1,36 +1,148 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🏰 The Citadel — DeFi Intelligence Dashboard
+
+Real-time DeFi intelligence and risk monitoring dashboard focused on the Morpho ecosystem.
+
+## Tech Stack
+
+- **Framework:** Next.js 16 (App Router)
+- **UI:** React 19, Tailwind CSS 4
+- **Charts:** Recharts
+- **Data Fetching:** SWR
+- **Language:** TypeScript (strict)
+- **External APIs:** Morpho GraphQL, Arkham Intelligence, CoinGecko, Etherscan
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Node.js 22+
+- npm 10+
+
+### Setup
+
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+2. Configure environment:
+   ```bash
+   cp .env.example .env.local
+   ```
+   
+   Edit `.env.local` with your values:
+   - `ARKHAM_API_KEY` — Your Arkham Intelligence API key
+   - `ARKHAM_BASE_URL` — Arkham API base URL (default: `https://api.arkhamintelligence.com`)
+   - `MORPHO_API_URL` — Morpho GraphQL endpoint (default: `https://api.morpho.org/graphql`)
+   - `WORKSPACE_DIR` — Path to the workspace directory containing `data/` and `research/` folders
+
+3. Start development server:
+   ```bash
+   npm run dev
+   ```
+   
+   Open [http://localhost:3000](http://localhost:3000).
+
+## Project Structure
+
+```
+projects/citadel/
+├── app/                          # Next.js App Router pages
+│   ├── page.tsx                  # Dashboard — protocol health monitor
+│   ├── layout.tsx                # Root layout with sidebar
+│   ├── morpho/page.tsx           # Morpho vault explorer with charts
+│   ├── intel/page.tsx            # Intel hub — curators, token activity, concentration
+│   ├── exposure/page.tsx         # Collateral exposure & risk tiers
+│   ├── yield-comparison/page.tsx # Cross-chain yield comparison (ETH vs Base)
+│   ├── signals/page.tsx          # Research signals & alerts feed
+│   └── api/                      # API routes
+│       ├── morpho/route.ts       # Morpho GraphQL proxy (avoids CORS)
+│       ├── intel/[...path]/      # Arkham Intelligence API proxy
+│       ├── exposure/route.ts     # Collateral exposure aggregation
+│       ├── signals/route.ts      # Research signal parser
+│       └── whales/route.ts       # Whale watchlist reader
+├── components/                   # Reusable UI components
+│   ├── ChainBadge.tsx            # Chain identifier badge
+│   ├── ChainDonut.tsx            # Chain distribution donut chart
+│   ├── DataTable.tsx             # Sortable, expandable data table
+│   ├── MetricCard.tsx            # Metric display card
+│   ├── RiskTierBadge.tsx         # Risk tier badge
+│   ├── Sidebar.tsx               # Collapsible navigation sidebar
+│   ├── SignalCard.tsx            # Expandable signal alert card
+│   ├── dashboard/                # Dashboard-specific components
+│   │   ├── DashboardMetricCard.tsx
+│   │   ├── RateOpportunities.tsx
+│   │   ├── RecentSignals.tsx
+│   │   ├── RiskPanel.tsx
+│   │   ├── StablecoinRow.tsx
+│   │   ├── UtilizationAlerts.tsx
+│   │   └── useDashboardData.ts   # Data fetching hook
+│   ├── intel/                    # Intel hub components
+│   │   ├── CuratorCard.tsx
+│   │   ├── TokenActivityFeed.tsx
+│   │   ├── VaultConcentrationTable.tsx
+│   │   ├── constants.ts
+│   │   ├── helpers.ts
+│   │   ├── types.ts
+│   │   └── useIntelData.ts       # Data fetching hook
+│   ├── morpho/                   # Morpho page components
+│   │   ├── ChartTooltips.tsx
+│   │   └── HotVaultCard.tsx
+│   ├── exposure/                 # Exposure page components
+│   │   ├── ChartTooltips.tsx
+│   │   └── TreemapContent.tsx
+│   └── yield-comparison/         # Yield comparison components
+│       ├── ButterflyTooltip.tsx
+│       └── ROICalculator.tsx
+├── lib/                          # Shared libraries
+│   ├── arkham.ts                 # Arkham Intelligence client
+│   ├── format.ts                 # Number/currency formatters
+│   ├── morpho.ts                 # Morpho GraphQL client
+│   ├── signals.ts                # Research signal parser (server-side)
+│   └── types.ts                  # TypeScript interfaces
+├── scripts/                      # Data pipeline scripts
+│   ├── check-whale-movements.py  # Whale balance change detector
+│   └── update-whale-watchlist.py # Whale watchlist builder
+├── .env.example                  # Environment variable template
+└── package.json
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## API Endpoints
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Endpoint | Method | Description |
+|---|---|---|
+| `/api/morpho` | POST | Proxies GraphQL queries to Morpho API |
+| `/api/intel/[...path]` | GET | Proxies requests to Arkham Intelligence API |
+| `/api/exposure` | GET | Aggregates collateral exposure data with risk tiers |
+| `/api/signals` | GET | Parses research markdown files for risk signals |
+| `/api/whales` | GET | Serves the whale watchlist from disk |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Scripts
 
-## Learn More
+### `update-whale-watchlist.py`
+Builds a deduplicated whale watchlist by fetching:
+- Top MORPHO token holders (via Arkham API)
+- Top vault depositors (via Morpho GraphQL)
+- Enriches addresses with Arkham entity labels
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+python3 scripts/update-whale-watchlist.py
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### `check-whale-movements.py`
+Monitors whale addresses for significant balance changes (>10% threshold).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+python3 scripts/check-whale-movements.py
+```
 
-## Deploy on Vercel
+Both scripts support the `WORKSPACE_DIR` and `ARKHAM_API_KEY` environment variables.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Pages
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Dashboard** (`/`) — Protocol health overview with utilization alerts, rate opportunities, risk panel
+- **Morpho Markets** (`/morpho`) — Full vault explorer with TVL/APY charts and sortable table
+- **Yield Comparison** (`/yield-comparison`) — ETH vs Base rate comparison with ROI calculator
+- **Collateral Exposure** (`/exposure`) — Risk-tiered collateral treemap and market breakdown
+- **Signals** (`/signals`) — Filtered feed of research-derived risk alerts
+- **Intel Hub** (`/intel`) — Curator tracking, MORPHO token flows, vault concentration analysis

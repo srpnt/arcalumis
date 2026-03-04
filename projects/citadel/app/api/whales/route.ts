@@ -6,10 +6,11 @@ import { NextResponse } from "next/server";
 import { readFile } from "fs/promises";
 import { join } from "path";
 
-const WATCHLIST_PATH = join(
+const WORKSPACE_DIR = process.env.WORKSPACE_DIR || join(
   process.env.HOME || "/home/piton",
-  ".openclaw/workspace/data/whale-watchlist.json"
+  ".openclaw/workspace"
 );
+const WATCHLIST_PATH = join(WORKSPACE_DIR, "data/whale-watchlist.json");
 
 export async function GET() {
   try {

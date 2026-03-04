@@ -19,7 +19,7 @@ import requests
 # Config
 # ============================================================
 
-WORKSPACE = Path(os.environ.get("HOME", "/home/piton")) / ".openclaw" / "workspace"
+WORKSPACE = Path(os.environ.get("WORKSPACE_DIR", str(Path(os.environ.get("HOME", "/home/piton")) / ".openclaw" / "workspace")))
 CREDS_PATH = WORKSPACE / "credentials" / "apis.json"
 OUTPUT_PATH = WORKSPACE / "data" / "whale-watchlist.json"
 

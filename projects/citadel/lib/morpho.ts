@@ -4,7 +4,7 @@
 
 import { MorphoMarket, MorphoVault, CHAIN_NAMES } from "./types";
 
-const MORPHO_API = "https://api.morpho.org/graphql";
+const MORPHO_API = process.env.MORPHO_API_URL || "https://api.morpho.org/graphql";
 
 const VAULTS_QUERY = `
 query TopVaults($first: Int!, $chains: [Int!]!) {
