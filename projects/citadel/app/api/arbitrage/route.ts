@@ -115,6 +115,7 @@ async function fetchMarketsBatch(first: number, skip: number): Promise<RawMarket
 }
 
 interface ProcessedMarket {
+  uniqueKey: string;
   chain: string;
   chainId: number;
   collateral: string;
@@ -167,6 +168,7 @@ export async function GET() {
       const symbol = loan.symbol || "?";
       const existing = byAsset.get(symbol) || [];
       existing.push({
+        uniqueKey: m.uniqueKey || "",
         chain: chainName,
         chainId,
         collateral: coll.symbol || "—",
@@ -248,7 +250,9 @@ export async function GET() {
           chainId: number;
           bestSupply: number;
           bestSupplyRaw: number;
+          bestSupplyMarketId: string;
           lowestBorrow: number;
+          lowestBorrowMarketId: string;
           effectiveBorrow: number;
           supplyTvl: number;
           borrowTvl: number;
@@ -262,17 +266,25 @@ export async function GET() {
           chainId: m.chainId,
           bestSupply: 0,
           bestSupplyRaw: 0,
+          bestSupplyMarketId: "",
           lowestBorrow: Infinity,
+          lowestBorrowMarketId: "",
           effectiveBorrow: Infinity,
           supplyTvl: 0,
           borrowTvl: 0,
           count: 0,
           rewards: new Set<string>(),
         };
-        existing.bestSupply = Math.max(existing.bestSupply, m.supplyApyWithRewards);
+        if (m.supplyApyWithRewards > existing.bestSupply) {
+          existing.bestSupply = m.supplyApyWithRewards;
+          existing.bestSupplyMarketId = m.uniqueKey;
+        }
         existing.bestSupplyRaw = Math.max(existing.bestSupplyRaw, m.supplyApy);
         if (m.borrowApy > 0) {
-          existing.lowestBorrow = Math.min(existing.lowestBorrow, m.borrowApy);
+          if (m.borrowApy < existing.lowestBorrow) {
+            existing.lowestBorrow = m.borrowApy;
+            existing.lowestBorrowMarketId = m.uniqueKey;
+          }
           existing.effectiveBorrow = Math.min(existing.effectiveBorrow, m.effectiveBorrowApy);
         }
         existing.supplyTvl += m.supplyUsd;
@@ -294,6 +306,8 @@ export async function GET() {
         borrowTvl: d.borrowTvl,
         marketCount: d.count,
         rewardTokens: [...d.rewards],
+        bestSupplyMarketId: d.bestSupplyMarketId,
+        lowestBorrowMarketId: d.lowestBorrowMarketId,
       }));
 
       // Generate cross-chain opportunities
@@ -321,12 +335,14 @@ export async function GET() {
               supplyApyRaw: s.supplyApy,
               supplyCollateral: s.collateral,
               supplyTvl: s.supplyUsd,
+              supplyMarketId: s.uniqueKey,
               borrowChain: b.chain,
               borrowChainId: b.chainId,
               borrowApy: b.borrowApy,
               effectiveBorrowApy: b.effectiveBorrowApy,
               borrowCollateral: b.collateral,
               borrowTvl: b.borrowUsd,
+              borrowMarketId: b.uniqueKey,
               rewardTokens: s.rewardSymbols,
             });
           }

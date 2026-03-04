@@ -1,6 +1,7 @@
 "use client";
 
 import type { AssetChainData } from "@/lib/types";
+import { getMorphoMarketUrl } from "@/lib/types";
 import { formatUsd, formatPct } from "@/lib/format";
 import {
   BarChart,
@@ -104,7 +105,25 @@ export default function AssetChainBreakdown({
               key={c.chainId}
               className="bg-gray-900/60 rounded-md px-3 py-2 text-xs"
             >
-              <p className="font-medium text-gray-300 mb-1">{c.chain}</p>
+              <p className="font-medium text-gray-300 mb-1">
+                {(() => {
+                  const supplyUrl = getMorphoMarketUrl(c.bestSupplyMarketId, c.chainId);
+                  if (supplyUrl) {
+                    return (
+                      <a
+                        href={supplyUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:text-white underline decoration-gray-600 underline-offset-2 hover:decoration-gray-400 transition-colors"
+                      >
+                        {c.chain}
+                        <span className="ml-0.5 text-[9px] opacity-60">↗</span>
+                      </a>
+                    );
+                  }
+                  return c.chain;
+                })()}
+              </p>
               <div className="flex justify-between text-gray-500">
                 <span>Supply</span>
                 <span className="text-emerald-400 font-mono">
@@ -114,7 +133,25 @@ export default function AssetChainBreakdown({
               <div className="flex justify-between text-gray-500">
                 <span>Borrow</span>
                 <span className="text-blue-400 font-mono">
-                  {c.lowestBorrowApy > 0 ? formatPct(c.lowestBorrowApy) : "—"}
+                  {c.lowestBorrowApy > 0 ? (
+                    (() => {
+                      const borrowUrl = getMorphoMarketUrl(c.lowestBorrowMarketId, c.chainId);
+                      if (borrowUrl) {
+                        return (
+                          <a
+                            href={borrowUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:text-blue-300 underline decoration-blue-800 underline-offset-2 hover:decoration-blue-500 transition-colors"
+                          >
+                            {formatPct(c.lowestBorrowApy)}
+                            <span className="ml-0.5 text-[9px] opacity-60">↗</span>
+                          </a>
+                        );
+                      }
+                      return formatPct(c.lowestBorrowApy);
+                    })()
+                  ) : "—"}
                 </span>
               </div>
               <div className="flex justify-between text-gray-500">
