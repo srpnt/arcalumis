@@ -247,10 +247,9 @@ export default function CommandCenter() {
         {opportunities.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
             {opportunities.map((opp, i) => (
-              <Link
+              <div
                 key={`${opp.asset}-${opp.supplyChainId}-${opp.borrowChainId}-${i}`}
-                href="/arbitrage"
-                className="bg-gray-900 border border-gray-800 rounded-xl p-4 hover:border-emerald-500/20 transition-colors block"
+                className="bg-gray-900 border border-gray-800 rounded-xl p-4 transition-colors"
               >
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-gray-200">
@@ -282,7 +281,7 @@ export default function CommandCenter() {
                     {riskBadge(opp.riskScore)}
                   </div>
                 )}
-              </Link>
+              </div>
             ))}
           </div>
         ) : (

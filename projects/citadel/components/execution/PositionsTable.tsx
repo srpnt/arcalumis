@@ -77,8 +77,9 @@ export default function PositionsTable({ positions, loading }: PositionsTablePro
                 CHAIN_BADGE_COLORS[pos.chainId] ||
                 "bg-gray-500/20 text-gray-400 border-gray-500/30";
               const marketUrl = getMorphoMarketUrl(pos.marketId, pos.chainId);
-              const supplyShares = parseFloat(pos.supplyShares || "0");
-              const borrowShares = parseFloat(pos.borrowShares || "0");
+              // Shares are raw on-chain values (18 decimals). Convert to human-readable.
+              const supplyShares = parseFloat(pos.supplyShares || "0") / 1e18;
+              const borrowShares = parseFloat(pos.borrowShares || "0") / 1e18;
 
               return (
                 <tr

@@ -245,10 +245,12 @@ export default function IntelPage() {
     loadVaultConcentration();
   }, [loadCurators, loadVaultConcentration]);
 
+  const [activeTab, setActiveTab] = useState<"curators" | "concentration">("curators");
+
   return (
     <div className="pt-8 md:pt-0">
       {/* Header */}
-      <div className="mb-8 flex items-start justify-between">
+      <div className="mb-6 flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-100">🔍 Intel Hub</h1>
           <p className="text-sm text-gray-500 mt-1">
@@ -257,59 +259,81 @@ export default function IntelPage() {
         </div>
       </div>
 
+      {/* Tabs */}
+      <div className="flex items-center gap-1 mb-6 bg-gray-900 rounded-lg p-1 w-fit">
+        <button
+          onClick={() => setActiveTab("curators")}
+          className={`px-4 py-2 text-sm rounded-md transition-colors ${
+            activeTab === "curators"
+              ? "bg-gray-700 text-gray-100 font-medium"
+              : "text-gray-500 hover:text-gray-300"
+          }`}
+        >
+          👤 Curators
+        </button>
+        <button
+          onClick={() => setActiveTab("concentration")}
+          className={`px-4 py-2 text-sm rounded-md transition-colors ${
+            activeTab === "concentration"
+              ? "bg-gray-700 text-gray-100 font-medium"
+              : "text-gray-500 hover:text-gray-300"
+          }`}
+        >
+          🏦 Vault Concentration
+        </button>
+      </div>
+
       {/* Curator Tracker */}
-      <section className="mb-10">
-        <div className="mb-6">
-          <h2 className="text-sm font-semibold text-emerald-400 uppercase tracking-wide mb-1">
-            Morpho Vault Curators
-          </h2>
-          <p className="text-xs text-gray-500">
-            All curators from the Morpho protocol with their managed vaults and AUM
-          </p>
-        </div>
-
-        {curatorsLoading && (
-          <div className="text-center py-8 text-gray-500">
-            <div className="inline-block animate-pulse">Loading curators from Morpho...</div>
+      {activeTab === "curators" && (
+        <section>
+          <div className="mb-4">
+            <p className="text-xs text-gray-500">
+              All curators from the Morpho protocol with their managed vaults and AUM
+            </p>
           </div>
-        )}
 
-        {curatorsError && (
-          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 text-red-400 text-sm mb-4">
-            ⚠️ {curatorsError}
+          {curatorsLoading && (
+            <div className="text-center py-8 text-gray-500">
+              <div className="inline-block animate-pulse">Loading curators from Morpho...</div>
+            </div>
+          )}
+
+          {curatorsError && (
+            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 text-red-400 text-sm mb-4">
+              ⚠️ {curatorsError}
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {curators.map((curator) => (
+              <CuratorCard key={curator.id} curator={curator} />
+            ))}
           </div>
-        )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {curators.map((curator) => (
-            <CuratorCard key={curator.id} curator={curator} />
-          ))}
-        </div>
-
-        {!curatorsLoading && !curatorsError && curators.length === 0 && (
-          <div className="text-center py-8 text-gray-600">
-            <p className="text-sm">No curators found.</p>
-          </div>
-        )}
-      </section>
+          {!curatorsLoading && !curatorsError && curators.length === 0 && (
+            <div className="text-center py-8 text-gray-600">
+              <p className="text-sm">No curators found.</p>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Vault Concentration */}
-      <section>
-        <div className="mb-6">
-          <h2 className="text-sm font-semibold text-emerald-400 uppercase tracking-wide mb-1">
-            🏦 Vault Concentration Risk
-          </h2>
-          <p className="text-xs text-gray-500">
-            Identifies single-depositor concentration risk across Morpho vaults
-          </p>
-        </div>
+      {activeTab === "concentration" && (
+        <section>
+          <div className="mb-4">
+            <p className="text-xs text-gray-500">
+              Identifies single-depositor concentration risk across Morpho vaults
+            </p>
+          </div>
 
-        <VaultConcentrationTable
-          entries={vaultConcentration}
-          loading={vaultConcentrationLoading}
-          error={vaultConcentrationError}
-        />
-      </section>
+          <VaultConcentrationTable
+            entries={vaultConcentration}
+            loading={vaultConcentrationLoading}
+            error={vaultConcentrationError}
+          />
+        </section>
+      )}
     </div>
   );
 }
