@@ -128,8 +128,18 @@ export default function ExecutionPage() {
   const nodeOnline = !statusError && !!statusData;
   const smartAccount = statusData?.smartAccount || "";
   const positions = positionsData?.positions || [];
-  const balances = positionsData?.balances || [];
   const opportunities = (opportunitiesData?.opportunities || []).slice(0, 5);
+
+  // Map status chains to PortfolioCards format
+  const balances = (statusData?.chains || []).map((c: any) => ({
+    chainId: c.chainId,
+    ethBalance: c.ethFormatted || "0",
+    tokens: (c.tokenBalances || []).map((t: any) => ({
+      symbol: t.symbol,
+      balance: t.balance,
+      decimals: ["USDC", "USDT", "EURC"].includes(t.symbol) ? 6 : 18,
+    })),
+  }));
 
   return (
     <div className="pt-8 md:pt-0">
