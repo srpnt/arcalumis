@@ -194,11 +194,23 @@ export interface ArbitrageData {
 
 // --- Shared ---
 
-export type ChainFilter = "all" | "ethereum" | "base";
+export type ChainFilter = "all" | string;
 
 export const CHAIN_NAMES: Record<number, string> = {
   1: "Ethereum",
   8453: "Base",
+  42161: "Arbitrum",
+  10: "Optimism",
+  137: "Polygon",
+  130: "Unichain",
+  480: "World Chain",
+  57073: "Ink",
+  999: "HyperEVM",
+  747474: "Katana",
+  143: "Monad",
+  988: "Stable",
+  98866: "Plume",
+  25: "Cronos",
 };
 
 /** Morpho frontend network slugs by chain ID */

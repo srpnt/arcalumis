@@ -79,9 +79,11 @@ function sf(val: unknown, fallback = 0): number {
   return isNaN(n) ? fallback : n;
 }
 
+export const ALL_MORPHO_CHAINS = [1, 8453, 42161, 10, 137, 130, 480, 57073, 999, 747474, 143, 988, 98866, 25];
+
 export async function fetchVaults(
-  chains: number[] = [1, 8453],
-  topN: number = 50
+  chains: number[] = ALL_MORPHO_CHAINS,
+  topN: number = 200
 ): Promise<MorphoVault[]> {
   const res = await fetch(MORPHO_API, {
     method: "POST",
@@ -128,8 +130,8 @@ export async function fetchVaults(
 }
 
 export async function fetchMarkets(
-  chains: number[] = [1, 8453],
-  topN: number = 50
+  chains: number[] = ALL_MORPHO_CHAINS,
+  topN: number = 200
 ): Promise<MorphoMarket[]> {
   const res = await fetch(MORPHO_API, {
     method: "POST",

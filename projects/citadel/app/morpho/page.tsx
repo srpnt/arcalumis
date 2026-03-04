@@ -11,8 +11,36 @@ import ChainBadge from "@/components/ChainBadge";
 import DataTable from "@/components/DataTable";
 import HotVaultCard from "@/components/morpho/HotVaultCard";
 import { VaultBarTooltip, ScatterTooltipContent } from "@/components/morpho/ChartTooltips";
-import { MorphoVault } from "@/lib/types";
+import { MorphoVault, CHAIN_NAMES, MORPHO_NETWORK_SLUGS } from "@/lib/types";
 import { formatUsd, formatPct } from "@/lib/format";
+
+// ============================================================
+// Constants
+// ============================================================
+
+const ALL_CHAINS = [1, 8453, 42161, 10, 137, 130, 480, 57073, 999, 747474, 143, 988, 98866, 25];
+
+/** Color palette for chains — first two match the original Ethereum/Base colors */
+const CHAIN_COLORS: Record<number, string> = {
+  1: "#10b981",       // Ethereum — emerald
+  8453: "#3b82f6",    // Base — blue
+  42161: "#f59e0b",   // Arbitrum — amber
+  10: "#ef4444",      // Optimism — red
+  137: "#8b5cf6",     // Polygon — purple
+  130: "#ec4899",     // Unichain — pink
+  480: "#06b6d4",     // World Chain — cyan
+  57073: "#f97316",   // Ink — orange
+  999: "#a855f7",     // HyperEVM — violet
+  747474: "#14b8a6",  // Katana — teal
+  143: "#6366f1",     // Monad — indigo
+  988: "#84cc16",     // Stable — lime
+  98866: "#d946ef",   // Plume — fuchsia
+  25: "#0ea5e9",      // Cronos — sky
+};
+
+function chainColor(chainId: number): string {
+  return CHAIN_COLORS[chainId] || "#6b7280";
+}
 
 // ============================================================
 // Query & Fetcher
@@ -40,8 +68,6 @@ query TopVaults($first: Int!, $chains: [Int!]!) {
 }
 `;
 
-const CHAIN_NAMES: Record<number, string> = { 1: "Ethereum", 8453: "Base" };
-
 function sf(val: unknown): number {
   if (val === null || val === undefined) return 0;
   const n = Number(val);
@@ -52,7 +78,7 @@ async function fetchVaultsClient(): Promise<MorphoVault[]> {
   const res = await fetch("/api/morpho", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query: VAULTS_QUERY, variables: { first: 50, chains: [1, 8453] } }),
+    body: JSON.stringify({ query: VAULTS_QUERY, variables: { first: 200, chains: ALL_CHAINS } }),
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const json = await res.json();
@@ -80,14 +106,12 @@ async function fetchVaultsClient(): Promise<MorphoVault[]> {
   return results;
 }
 
-type ChainTab = "all" | "ethereum" | "base";
-
 // ============================================================
 // Component
 // ============================================================
 
 export default function MorphoPage() {
-  const [chainFilter, setChainFilter] = useState<ChainTab>("all");
+  const [chainFilter, setChainFilter] = useState<string>("all");
   const [assetFilter, setAssetFilter] = useState("all");
   const [autoRefresh, setAutoRefresh] = useState(false);
 
@@ -95,6 +119,17 @@ export default function MorphoPage() {
     "morpho-vaults", fetchVaultsClient,
     { revalidateOnFocus: false, refreshInterval: autoRefresh ? 300_000 : 0 }
   );
+
+  /** Chains that actually have vault data, sorted by TVL descending */
+  const activeChains = useMemo(() => {
+    const tvlByChain: Record<number, number> = {};
+    for (const v of vaults || []) {
+      tvlByChain[v.chainId] = (tvlByChain[v.chainId] || 0) + v.totalAssetsUsd;
+    }
+    return Object.entries(tvlByChain)
+      .sort(([, a], [, b]) => b - a)
+      .map(([id]) => Number(id));
+  }, [vaults]);
 
   const uniqueAssets = useMemo(() => {
     const symbols = new Set<string>();
@@ -105,8 +140,7 @@ export default function MorphoPage() {
   }, [vaults]);
 
   const filtered = (vaults || []).filter((v) => {
-    if (chainFilter === "ethereum" && v.chainId !== 1) return false;
-    if (chainFilter === "base" && v.chainId !== 8453) return false;
+    if (chainFilter !== "all" && String(v.chainId) !== chainFilter) return false;
     if (assetFilter !== "all" && v.underlyingAsset !== assetFilter) return false;
     return true;
   });
@@ -115,19 +149,21 @@ export default function MorphoPage() {
   const avgApy = filtered.length ? filtered.reduce((s, v) => s + v.netApy, 0) / filtered.length : 0;
   const topApy = filtered.reduce((max, v) => Math.max(max, v.netApy), 0);
 
-  const hotThreshold = chainFilter === "base" ? 0.03 : 0.08;
-  const hotLabel = chainFilter === "base" ? "3%" : "8%";
+  const hotThreshold = 0.05;
+  const hotLabel = "5%";
   const hotVaults = filtered.filter((v) => v.netApy > hotThreshold).sort((a, b) => b.netApy - a.netApy);
 
-  const vaultUrl = (v: MorphoVault) =>
-    `https://app.morpho.org/vault?vault=${v.address}&network=${v.chainId === 8453 ? "base" : "mainnet"}`;
+  const vaultUrl = (v: MorphoVault) => {
+    const slug = MORPHO_NETWORK_SLUGS[v.chainId] || "ethereum";
+    return `https://app.morpho.org/vault?vault=${v.address}&network=${slug}`;
+  };
 
   const barData = useMemo(() => [...filtered]
     .sort((a, b) => b.totalAssetsUsd - a.totalAssetsUsd).slice(0, 10).reverse()
     .map((v) => ({
       name: v.name.length > 30 ? v.name.slice(0, 28) + "…" : v.name,
       tvl: v.totalAssetsUsd, chain: v.chain,
-      color: v.chainId === 1 ? "#10b981" : "#3b82f6",
+      color: chainColor(v.chainId),
     })), [filtered]);
 
   const scatterData = useMemo(() => filtered
@@ -139,6 +175,13 @@ export default function MorphoPage() {
       size: Math.max(40, Math.min(400, v.numMarkets * 30)),
     })), [filtered]);
 
+  /** Distinct chain IDs present in scatterData */
+  const scatterChainIds = useMemo(() => {
+    const ids = new Set<number>();
+    for (const d of scatterData) ids.add(d.chainId);
+    return Array.from(ids).sort((a, b) => a - b);
+  }, [scatterData]);
+
   const medianTvl = useMemo(() => {
     const tvls = scatterData.map((d) => d.tvl).sort((a, b) => a - b);
     return tvls.length ? tvls[Math.floor(tvls.length / 2)] : 0;
@@ -148,6 +191,20 @@ export default function MorphoPage() {
     const apys = scatterData.map((d) => d.apy).sort((a, b) => a - b);
     return apys.length ? apys[Math.floor(apys.length / 2)] : 0;
   }, [scatterData]);
+
+  /** Chains shown in the legend (bar chart + scatter chart) */
+  const legendChains = useMemo(() => {
+    const ids = new Set<number>();
+    for (const d of barData) {
+      const entry = filtered.find((v) => (v.name.length > 30 ? v.name.slice(0, 28) + "…" : v.name) === d.name);
+      if (entry) ids.add(entry.chainId);
+    }
+    for (const id of scatterChainIds) ids.add(id);
+    return Array.from(ids).sort((a, b) => a - b);
+  }, [barData, scatterChainIds, filtered]);
+
+  const chainCount = activeChains.length;
+  const subtitle = chainCount > 0 ? `Live vault data from Morpho — ${chainCount} chains` : "Live vault data from Morpho";
 
   const columns = [
     { key: "name", label: "Vault", width: "28%", minWidth: "180px",
@@ -185,7 +242,7 @@ export default function MorphoPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-100">📊 Morpho Markets</h1>
-          <p className="text-sm text-gray-500 mt-1">Live vault data from Morpho — Ethereum & Base</p>
+          <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
         </div>
         <div className="flex items-center gap-3 mt-4 sm:mt-0">
           <label className="flex items-center gap-2 text-xs text-gray-500 cursor-pointer">
@@ -207,11 +264,16 @@ export default function MorphoPage() {
       </div>
 
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-6">
-        <div className="flex items-center gap-1 bg-gray-900 rounded-lg p-1 w-fit">
-          {(["all", "ethereum", "base"] as ChainTab[]).map((tab) => (
-            <button key={tab} onClick={() => setChainFilter(tab)}
-              className={`px-4 py-2 text-sm rounded-md transition-colors ${chainFilter === tab ? "bg-gray-700 text-gray-100 font-medium" : "text-gray-500 hover:text-gray-300"}`}>
-              {tab === "all" ? "All Chains" : tab === "ethereum" ? "⟠ Ethereum" : "🔵 Base"}
+        <div className="flex items-center gap-1 bg-gray-900 rounded-lg p-1 flex-wrap w-fit">
+          <button onClick={() => setChainFilter("all")}
+            className={`px-4 py-2 text-sm rounded-md transition-colors ${chainFilter === "all" ? "bg-gray-700 text-gray-100 font-medium" : "text-gray-500 hover:text-gray-300"}`}>
+            All Chains
+          </button>
+          {activeChains.map((id) => (
+            <button key={id} onClick={() => setChainFilter(String(id))}
+              className={`px-3 py-2 text-sm rounded-md transition-colors flex items-center gap-1.5 ${chainFilter === String(id) ? "bg-gray-700 text-gray-100 font-medium" : "text-gray-500 hover:text-gray-300"}`}>
+              <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: chainColor(id) }} />
+              {CHAIN_NAMES[id] || String(id)}
             </button>
           ))}
         </div>
@@ -242,9 +304,13 @@ export default function MorphoPage() {
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
-            <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
-              <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-emerald-500" /><span>Ethereum</span></div>
-              <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-blue-500" /><span>Base</span></div>
+            <div className="flex items-center gap-3 mt-2 text-xs text-gray-500 flex-wrap">
+              {legendChains.map((id) => (
+                <div key={id} className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: chainColor(id) }} />
+                  <span>{CHAIN_NAMES[id] || String(id)}</span>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -262,17 +328,23 @@ export default function MorphoPage() {
                 <Tooltip content={<ScatterTooltipContent />} />
                 {medianTvl > 0 && <ReferenceLine x={medianTvl} stroke="#4b5563" strokeDasharray="3 3" />}
                 {medianApy > 0 && <ReferenceLine y={medianApy} stroke="#4b5563" strokeDasharray="3 3"><Label value="🎯 Sweet Spot →" position="insideTopRight" fill="#6b7280" fontSize={10} /></ReferenceLine>}
-                <Scatter data={scatterData.filter((d) => d.chainId === 1)} name="Ethereum" fill="#10b981">
-                  {scatterData.filter((d) => d.chainId === 1).map((_, i) => <Cell key={i} fill="#10b981" fillOpacity={0.7} />)}
-                </Scatter>
-                <Scatter data={scatterData.filter((d) => d.chainId === 8453)} name="Base" fill="#3b82f6">
-                  {scatterData.filter((d) => d.chainId === 8453).map((_, i) => <Cell key={i} fill="#3b82f6" fillOpacity={0.7} />)}
-                </Scatter>
+                {scatterChainIds.map((chainId) => (
+                  <Scatter key={chainId} data={scatterData.filter((d) => d.chainId === chainId)}
+                    name={CHAIN_NAMES[chainId] || String(chainId)} fill={chainColor(chainId)}>
+                    {scatterData.filter((d) => d.chainId === chainId).map((_, i) => (
+                      <Cell key={i} fill={chainColor(chainId)} fillOpacity={0.7} />
+                    ))}
+                  </Scatter>
+                ))}
               </ScatterChart>
             </ResponsiveContainer>
-            <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
-              <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-emerald-500" /><span>Ethereum</span></div>
-              <div className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full bg-blue-500" /><span>Base</span></div>
+            <div className="flex items-center gap-3 mt-2 text-xs text-gray-500 flex-wrap">
+              {scatterChainIds.map((id) => (
+                <div key={id} className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 rounded-full" style={{ backgroundColor: chainColor(id) }} />
+                  <span>{CHAIN_NAMES[id] || String(id)}</span>
+                </div>
+              ))}
               <span className="text-gray-600">Dot size = # markets</span>
             </div>
           </div>
