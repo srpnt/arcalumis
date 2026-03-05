@@ -7,7 +7,7 @@
  */
 
 import { encodeFunctionData, type Address, type Hex } from "viem";
-import { MORPHO_BLUE } from "../config/index.js";
+import { MORPHO_BLUE } from "../config.js";
 
 // Morpho Blue ABI (minimal — just what we need)
 const morphoBlueAbi = [

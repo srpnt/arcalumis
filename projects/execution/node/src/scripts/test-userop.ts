@@ -6,31 +6,11 @@
  */
 
 import { encodeFunctionData, parseUnits, type Address, type Hex } from "viem";
-import { SMART_ACCOUNT, TOKENS } from "./config/index.js";
-import { executeViaUserOp, getAccountNonce } from "./executor/userop.js";
+import { SMART_ACCOUNT, TOKENS } from "../shared/config.js";
+import { executeViaUserOp, getAccountNonce } from "../shared/userop.js";
+import { buildNexusExecuteCalldata } from "../shared/nexus.js";
 
 const BASE_CHAIN_ID = 8453;
-
-// Nexus execute mode + encoding
-const SINGLE_EXEC_MODE = "0x0000000000000000000000000000000000000000000000000000000000000000" as Hex;
-
-const nexusExecuteAbi = [{
-  name: "execute",
-  type: "function",
-  inputs: [
-    { name: "mode", type: "bytes32" },
-    { name: "executionCalldata", type: "bytes" },
-  ],
-  outputs: [],
-  stateMutability: "payable",
-}] as const;
-
-function encodeSingleExecution(target: Address, value: bigint, calldata: Hex): Hex {
-  const targetBytes = target.slice(2).toLowerCase().padStart(40, "0");
-  const valueBytes = value.toString(16).padStart(64, "0");
-  const calldataBytes = calldata.slice(2);
-  return `0x${targetBytes}${valueBytes}${calldataBytes}` as Hex;
-}
 
 async function main() {
   console.log("🧪 UserOp Test — Live on Base");
@@ -61,14 +41,10 @@ async function main() {
     args: [morphoBlue, 0n],
   });
 
-  // Wrap in Nexus execute call
-  const executionCalldata = encodeSingleExecution(usdcBase, 0n, approveCalldata);
-
-  const nexusCalldata = encodeFunctionData({
-    abi: nexusExecuteAbi,
-    functionName: "execute",
-    args: [SINGLE_EXEC_MODE, executionCalldata],
-  });
+  // Wrap in Nexus execute call using shared helper
+  const nexusCalldata = buildNexusExecuteCalldata([
+    { target: usdcBase, value: 0n, calldata: approveCalldata },
+  ]);
 
   console.log("   Action: USDC.approve(MorphoBlue, 0) via Nexus execute");
   console.log(`   Calldata: ${nexusCalldata.slice(0, 40)}...`);

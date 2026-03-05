@@ -13,7 +13,7 @@ import {
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { base, mainnet } from "viem/chains";
-import { CHAINS, SMART_ACCOUNT, PRIVATE_KEY } from "./config/index.js";
+import { CHAINS, SMART_ACCOUNT, PRIVATE_KEY } from "../shared/config.js";
 
 const ENTRYPOINT_V07 = "0x0000000071727De22E5E9d8BAf0edAc6f37da032" as Address;
 const account = privateKeyToAccount(PRIVATE_KEY);
@@ -50,6 +50,7 @@ async function main() {
     functionName: "depositTo",
     args: [SMART_ACCOUNT],
     value: parseEther(amount),
+    chain,
   });
 
   console.log(`TX: ${hash}`);

@@ -8,12 +8,11 @@ import {
   http,
   formatEther,
   type Address,
-  type PublicClient,
   erc20Abi,
 } from "viem";
 import { mainnet, base } from "viem/chains";
-import { CHAINS, SMART_ACCOUNT, TOKENS } from "../config/index.js";
-import type { ChainPortfolio, PortfolioState, TokenBalance } from "../types/index.js";
+import { CHAINS, SMART_ACCOUNT, TOKENS } from "../config.js";
+import type { ChainPortfolio, PortfolioState, TokenBalance } from "../types.js";
 
 // Chain objects for viem
 const VIEM_CHAINS: Record<number, any> = {
@@ -21,27 +20,35 @@ const VIEM_CHAINS: Record<number, any> = {
   8453: base,
 };
 
-function getClient(chainId: number): PublicClient {
+function getViemChain(chainId: number) {
+  if (chainId === 1) return mainnet;
+  if (chainId === 8453) return base;
+  throw new Error(`Unknown viem chain ${chainId}`);
+}
+
+function getClient(chainId: number) {
   const chainKey = Object.keys(CHAINS).find(
     (k) => CHAINS[k].id === chainId
   );
   if (!chainKey) throw new Error(`Unknown chain ${chainId}`);
   const config = CHAINS[chainKey];
   return createPublicClient({
-    chain: VIEM_CHAINS[chainId],
+    chain: getViemChain(chainId),
     transport: http(config.rpcHttp),
   });
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getEthBalance(
-  client: PublicClient,
+  client: any,
   address: Address
 ): Promise<bigint> {
   return client.getBalance({ address });
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getTokenBalance(
-  client: PublicClient,
+  client: any,
   tokenAddress: Address,
   ownerAddress: Address
 ): Promise<bigint> {

@@ -2,7 +2,7 @@
  * Citadel Node Types
  */
 
-import type { Address } from "viem";
+import type { Address, Hex } from "viem";
 
 // ============================================================
 // Market & Rate Types
@@ -101,7 +101,73 @@ export interface ExecutionPlan {
 }
 
 // ============================================================
-// Node State
+// Plan Status (for file-based coordination)
+// ============================================================
+
+export type PlanStatus = "pending" | "executing" | "completed" | "failed";
+
+export interface StoredPlan {
+  plan: ExecutionPlan;
+  status: PlanStatus;
+  createdAt: number;
+  updatedAt: number;
+  executionResults?: ExecutionResult[];
+  error?: string;
+}
+
+export interface ExecutionResult {
+  chainId: number;
+  txHash: Hex;
+  success: boolean;
+  gasUsed: bigint;
+  error?: string;
+  timestamp: number;
+}
+
+// ============================================================
+// Monitor Types
+// ============================================================
+
+export interface MonitorStatus {
+  timestamp: number;
+  chains: Record<number, ChainMonitorStatus>;
+  services: ServiceLiveness;
+  alerts: MonitorAlert[];
+}
+
+export interface ChainMonitorStatus {
+  chainId: number;
+  chainName: string;
+  eoaEthBalance: string; // formatted ETH
+  eoaEthBalanceWei: string;
+  entryPointDeposit: string; // formatted ETH
+  entryPointDepositWei: string;
+  smartAccountTokens: { symbol: string; balance: string; formatted: string }[];
+  morphoPositions: {
+    marketId: string;
+    loanAsset: string;
+    collateralAsset: string;
+    supplyShares: string;
+    borrowShares: string;
+    collateral: string;
+  }[];
+}
+
+export interface ServiceLiveness {
+  watcher: { lastWrite: number | null; healthy: boolean };
+  planner: { lastWrite: number | null; healthy: boolean };
+  executor: { lastWrite: number | null; healthy: boolean };
+  monitor: { lastWrite: number | null; healthy: boolean };
+}
+
+export interface MonitorAlert {
+  level: "warning" | "critical";
+  message: string;
+  timestamp: number;
+}
+
+// ============================================================
+// Node State (legacy, kept for compatibility)
 // ============================================================
 
 export type NodeMode = "paper" | "live";

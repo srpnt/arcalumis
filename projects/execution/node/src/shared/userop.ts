@@ -5,6 +5,8 @@
  * Uses the NoMeeFlow validation path (standard ECDSA signature on userOpHash).
  * 
  * EntryPoint v0.7 uses PackedUserOperation format.
+ * 
+ * ⚠️  BATTLE-TESTED — Live tx on Base. Do not break this.
  */
 
 import {
@@ -25,7 +27,7 @@ import {
 } from "viem";
 import { privateKeyToAccount, signMessage } from "viem/accounts";
 import { mainnet, base } from "viem/chains";
-import { CHAINS, SMART_ACCOUNT, PRIVATE_KEY, CONTRACTS } from "../config/index.js";
+import { CHAINS, SMART_ACCOUNT, PRIVATE_KEY, CONTRACTS } from "./config.js";
 
 const ENTRYPOINT_V07 = "0x0000000071727De22E5E9d8BAf0edAc6f37da032" as Address;
 const VIEM_CHAINS: Record<number, any> = { 1: mainnet, 8453: base };
@@ -110,18 +112,6 @@ const entryPointAbi = [
     stateMutability: "view",
   },
 ] as const;
-
-// Nexus execute ABI
-const nexusExecuteAbi = [{
-  name: "execute",
-  type: "function",
-  inputs: [
-    { name: "mode", type: "bytes32" },
-    { name: "executionCalldata", type: "bytes" },
-  ],
-  outputs: [],
-  stateMutability: "payable",
-}] as const;
 
 // ============================================================
 // Helpers
@@ -260,6 +250,7 @@ export async function submitUserOp(
       abi: entryPointAbi,
       functionName: "handleOps",
       args: [[userOp], account.address], // beneficiary = our EOA (receives gas refund)
+      chain: VIEM_CHAINS[chainId],
     });
 
     console.log(`    🔗 TX: ${hash}`);

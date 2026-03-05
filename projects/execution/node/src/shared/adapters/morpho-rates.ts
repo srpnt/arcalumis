@@ -3,7 +3,7 @@
  * Fetches market rates across all chains and identifies cross-chain opportunities
  */
 
-import type { MorphoMarketRate, CrossChainOpportunity } from "../types/index.js";
+import type { MorphoMarketRate, CrossChainOpportunity } from "../types.js";
 
 const MORPHO_API =
   process.env.MORPHO_API_URL || "https://api.morpho.org/graphql";

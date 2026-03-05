@@ -1,17 +1,26 @@
 {
   "name": "@citadel/node",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
-    "start": "tsx src/index.ts",
-    "watch": "tsx src/watcher/index.ts"
+    "watcher": "tsx src/services/watcher/index.ts",
+    "planner": "tsx src/services/planner/index.ts",
+    "executor": "tsx src/services/executor/index.ts",
+    "monitor": "tsx src/services/monitor/index.ts",
+    "api": "tsx src/services/api/index.ts",
+    "all": "concurrently \"npm run watcher\" \"npm run planner\" \"npm run executor\" \"npm run monitor\" \"npm run api\"",
+    "emergency": "tsx src/services/monitor/emergency.ts",
+    "fund-entrypoint": "tsx src/scripts/fund-entrypoint.ts",
+    "test:userop": "tsx src/scripts/test-userop.ts",
+    "test:executor": "tsx src/scripts/test-executor.ts",
+    "test:morpho-supply": "tsx src/scripts/test-morpho-supply.ts"
   },
   "dependencies": {
     "viem": "^2.30.0"
   },
   "devDependencies": {
+    "concurrently": "^9.1.0",
     "tsx": "^4.21.0",
     "typescript": "^5.7.0",
     "@types/node": "^22.0.0"

@@ -7,45 +7,18 @@
 
 import {
   encodeFunctionData,
-  encodeAbiParameters,
   parseUnits,
   type Address,
   type Hex,
 } from "viem";
-import { SMART_ACCOUNT, MORPHO_BLUE } from "./config/index.js";
-import { executeViaUserOp } from "./executor/userop.js";
+import { SMART_ACCOUNT, MORPHO_BLUE } from "../shared/config.js";
+import { executeViaUserOp } from "../shared/userop.js";
+import { buildNexusExecuteCalldata } from "../shared/nexus.js";
 
 const BASE_CHAIN_ID = 8453;
 const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as Address;
 const MORPHO_BASE = MORPHO_BLUE[BASE_CHAIN_ID];
 const AMOUNT = parseUnits("15", 6); // 15 USDC
-
-const nexusExecuteAbi = [{
-  name: "execute",
-  type: "function",
-  inputs: [
-    { name: "mode", type: "bytes32" },
-    { name: "executionCalldata", type: "bytes" },
-  ],
-  outputs: [],
-  stateMutability: "payable",
-}] as const;
-
-const BATCH_EXEC_MODE = "0x0100000000000000000000000000000000000000000000000000000000000000" as Hex;
-
-function encodeBatchExecution(actions: { target: Address; value: bigint; calldata: Hex }[]): Hex {
-  return encodeAbiParameters(
-    [{
-      type: "tuple[]",
-      components: [
-        { name: "target", type: "address" },
-        { name: "value", type: "uint256" },
-        { name: "callData", type: "bytes" },
-      ],
-    }],
-    [actions.map((a) => ({ target: a.target, value: a.value, callData: a.calldata }))]
-  );
-}
 
 async function main() {
   console.log("🏰 Supply 15 USDC to Morpho Blue on Base");
@@ -150,17 +123,11 @@ async function main() {
     ],
   });
 
-  // Batch: approve + supply
-  const batchCalldata = encodeBatchExecution([
+  // Build Nexus execute calldata using shared helper
+  const nexusCalldata = buildNexusExecuteCalldata([
     { target: USDC_BASE, value: 0n, calldata: approveCalldata },
     { target: MORPHO_BASE, value: 0n, calldata: supplyCalldata },
   ]);
-
-  const nexusCalldata = encodeFunctionData({
-    abi: nexusExecuteAbi,
-    functionName: "execute",
-    args: [BATCH_EXEC_MODE, batchCalldata],
-  });
 
   console.log("   Actions:");
   console.log("     1. Approve 15 USDC to Morpho Blue");

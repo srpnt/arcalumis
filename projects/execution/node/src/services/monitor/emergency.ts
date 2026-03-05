@@ -2,19 +2,17 @@
  * Emergency Exit — Withdraw all positions and sweep funds to EOA
  * 
  * Usage:
- *   npx tsx src/emergency.ts base          # Exit all on Base
- *   npx tsx src/emergency.ts ethereum      # Exit all on Ethereum
- *   npx tsx src/emergency.ts all           # Exit all on all chains
- *   npx tsx src/emergency.ts base --dry-run  # Simulate only
+ *   npx tsx src/services/monitor/emergency.ts base          # Exit all on Base
+ *   npx tsx src/services/monitor/emergency.ts ethereum      # Exit all on Ethereum
+ *   npx tsx src/services/monitor/emergency.ts all           # Exit all on all chains
+ *   npx tsx src/services/monitor/emergency.ts base --dry-run  # Simulate only
  */
 
 import {
   encodeFunctionData,
-  encodeAbiParameters,
   createPublicClient,
   http,
   erc20Abi,
-  maxUint256,
   formatEther,
   formatUnits,
   type Address,
@@ -22,46 +20,12 @@ import {
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { mainnet, base } from "viem/chains";
-import { SMART_ACCOUNT, CHAINS, PRIVATE_KEY, MORPHO_BLUE, TOKENS } from "./config/index.js";
-import { executeViaUserOp } from "./executor/userop.js";
+import { SMART_ACCOUNT, CHAINS, PRIVATE_KEY, MORPHO_BLUE, TOKENS } from "../../shared/config.js";
+import { executeViaUserOp } from "../../shared/userop.js";
+import { buildNexusExecuteCalldata } from "../../shared/nexus.js";
 
 const VIEM_CHAINS: Record<number, any> = { 1: mainnet, 8453: base };
 const account = privateKeyToAccount(PRIVATE_KEY);
-
-const nexusExecuteAbi = [{
-  name: "execute",
-  type: "function",
-  inputs: [
-    { name: "mode", type: "bytes32" },
-    { name: "executionCalldata", type: "bytes" },
-  ],
-  outputs: [],
-  stateMutability: "payable",
-}] as const;
-
-const SINGLE_EXEC_MODE = "0x0000000000000000000000000000000000000000000000000000000000000000" as Hex;
-const BATCH_EXEC_MODE = "0x0100000000000000000000000000000000000000000000000000000000000000" as Hex;
-
-function encodeSingleExecution(target: Address, value: bigint, calldata: Hex): Hex {
-  const t = target.slice(2).toLowerCase().padStart(40, "0");
-  const v = value.toString(16).padStart(64, "0");
-  const c = calldata.slice(2);
-  return `0x${t}${v}${c}` as Hex;
-}
-
-function encodeBatchExecution(actions: { target: Address; value: bigint; calldata: Hex }[]): Hex {
-  return encodeAbiParameters(
-    [{
-      type: "tuple[]",
-      components: [
-        { name: "target", type: "address" },
-        { name: "value", type: "uint256" },
-        { name: "callData", type: "bytes" },
-      ],
-    }],
-    [actions.map((a) => ({ target: a.target, value: a.value, callData: a.calldata }))]
-  );
-}
 
 // ============================================================
 // Morpho position detection
@@ -128,7 +92,6 @@ async function findOpenPositions(chainId: number): Promise<{
   borrowShares: bigint;
   collateral: bigint;
 }[]> {
-  // Fetch markets from Morpho API for this chain
   const res = await fetch("https://api.morpho.org/graphql", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -157,7 +120,6 @@ async function findOpenPositions(chainId: number): Promise<{
 
   const positions: any[] = [];
 
-  // Check each market for our position
   for (const m of markets) {
     try {
       const [supplyShares, borrowShares, collateral] = await client.readContract({
@@ -206,7 +168,6 @@ async function findTokenBalances(chainId: number): Promise<{ address: Address; s
     const addr = addrs[chainId];
     if (addr) knownTokens.push({ address: addr, symbol, decimals: ["USDC", "USDT", "EURC"].includes(symbol) ? 6 : 18 });
   }
-  // Add WETH explicitly
   if (chainId === 8453) knownTokens.push({ address: "0x4200000000000000000000000000000000000006", symbol: "WETH", decimals: 18 });
   if (chainId === 1) knownTokens.push({ address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", symbol: "WETH", decimals: 18 });
 
@@ -253,7 +214,6 @@ async function emergencyExitChain(chainId: number, dryRun: boolean) {
     console.log(`    Borrow shares: ${pos.borrowShares}`);
     console.log(`    Collateral: ${pos.collateral}`);
 
-    // Withdraw all supply (by shares)
     if (pos.supplyShares > 0n) {
       actions.push({
         target: MORPHO_BLUE[chainId],
@@ -269,7 +229,7 @@ async function emergencyExitChain(chainId: number, dryRun: boolean) {
               irm: m.irm,
               lltv: m.lltv,
             },
-            0n, // assets = 0 (withdraw all by shares)
+            0n,
             pos.supplyShares,
             SMART_ACCOUNT,
             SMART_ACCOUNT,
@@ -278,9 +238,6 @@ async function emergencyExitChain(chainId: number, dryRun: boolean) {
         desc: `Withdraw all ${m.loanSymbol} supply from ${m.collateralSymbol}/${m.loanSymbol}`,
       });
     }
-
-    // TODO: If borrowing, repay borrow then withdraw collateral
-    // For now we handle supply-only positions
   }
 
   // 2. Find token balances and sweep to EOA
@@ -312,22 +269,9 @@ async function emergencyExitChain(chainId: number, dryRun: boolean) {
     console.log(`    → ${a.desc}`);
   }
 
-  let nexusCalldata: Hex;
-  if (actions.length === 1) {
-    const exec = encodeSingleExecution(actions[0].target, actions[0].value, actions[0].calldata);
-    nexusCalldata = encodeFunctionData({
-      abi: nexusExecuteAbi,
-      functionName: "execute",
-      args: [SINGLE_EXEC_MODE, exec],
-    });
-  } else {
-    const batch = encodeBatchExecution(actions.map((a) => ({ target: a.target, value: a.value, calldata: a.calldata })));
-    nexusCalldata = encodeFunctionData({
-      abi: nexusExecuteAbi,
-      functionName: "execute",
-      args: [BATCH_EXEC_MODE, batch],
-    });
-  }
+  const nexusCalldata = buildNexusExecuteCalldata(
+    actions.map((a) => ({ target: a.target, value: a.value, calldata: a.calldata }))
+  );
 
   const result = await executeViaUserOp(chainId, nexusCalldata, { dryRun });
 

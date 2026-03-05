@@ -10,10 +10,14 @@ import {
   parseEther,
   type Address,
   type Hex,
-  encodeAbiParameters,
 } from "viem";
-import { SMART_ACCOUNT, MORPHO_BLUE } from "./config/index.js";
-import { executeViaUserOp } from "./executor/userop.js";
+import { SMART_ACCOUNT, MORPHO_BLUE } from "../shared/config.js";
+import { executeViaUserOp } from "../shared/userop.js";
+import {
+  encodeBatchExecution,
+  nexusExecuteAbi,
+  BATCH_EXEC_MODE,
+} from "../shared/nexus.js";
 
 const BASE_CHAIN_ID = 8453;
 const WETH_BASE = "0x4200000000000000000000000000000000000006" as Address;
@@ -21,43 +25,6 @@ const MORPHO_BASE = MORPHO_BLUE[BASE_CHAIN_ID];
 
 // Amount to test with
 const AMOUNT = parseEther("0.001"); // ~$2.50
-
-// Nexus execute ABI
-const nexusExecuteAbi = [{
-  name: "execute",
-  type: "function",
-  inputs: [
-    { name: "mode", type: "bytes32" },
-    { name: "executionCalldata", type: "bytes" },
-  ],
-  outputs: [],
-  stateMutability: "payable",
-}] as const;
-
-// Mode codes
-const SINGLE_EXEC_MODE = "0x0000000000000000000000000000000000000000000000000000000000000000" as Hex;
-const BATCH_EXEC_MODE = "0x0100000000000000000000000000000000000000000000000000000000000000" as Hex;
-
-function encodeSingleExecution(target: Address, value: bigint, calldata: Hex): Hex {
-  const t = target.slice(2).toLowerCase().padStart(40, "0");
-  const v = value.toString(16).padStart(64, "0");
-  const c = calldata.slice(2);
-  return `0x${t}${v}${c}` as Hex;
-}
-
-function encodeBatchExecution(actions: { target: Address; value: bigint; calldata: Hex }[]): Hex {
-  return encodeAbiParameters(
-    [{
-      type: "tuple[]",
-      components: [
-        { name: "target", type: "address" },
-        { name: "value", type: "uint256" },
-        { name: "callData", type: "bytes" },
-      ],
-    }],
-    [actions.map((a) => ({ target: a.target, value: a.value, callData: a.calldata }))]
-  );
-}
 
 async function main() {
   const dryRun = process.argv.includes("--dry-run");
@@ -90,13 +57,7 @@ async function main() {
     args: [MORPHO_BASE, AMOUNT],
   });
 
-  // Step 3: Supply WETH to Morpho Blue
-  // We need a real market. Let's find the best WETH market on Base.
-  // Using the wrsETH/WETH market from our scanner (5% APY)
-  // For safety, we'll just do a supply to ANY WETH market.
-  // Morpho Blue supply requires MarketParams struct.
-  
-  // Let's fetch a real WETH market from Morpho API
+  // Step 3: Find a real WETH market from Morpho API
   const res = await fetch("https://api.morpho.org/graphql", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -129,8 +90,6 @@ async function main() {
   console.log(`   Market: ${market.collateralAsset.symbol}/WETH`);
   console.log(`   Supply APY: ${(market.state.supplyApy * 100).toFixed(2)}%`);
   console.log(`   TVL: $${(market.state.supplyAssetsUsd / 1e6).toFixed(1)}M`);
-  console.log(`   Oracle: ${market.oracleAddress}`);
-  console.log(`   IRM: ${market.irmAddress}`);
   console.log("");
 
   // Encode Morpho supply call
@@ -171,7 +130,7 @@ async function main() {
         lltv: BigInt(market.lltv),
       },
       AMOUNT,
-      0n, // shares = 0 (supply by assets)
+      0n,
       SMART_ACCOUNT,
       "0x" as Hex,
     ],
